@@ -44,9 +44,10 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot : "button"
+  const Comp = (asChild ? Slot : "button") as any
 
   return (
+    // Type assertion to work around React 19 type compatibility with Radix UI
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
