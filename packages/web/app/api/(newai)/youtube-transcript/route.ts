@@ -52,77 +52,9 @@ export async function POST(request: NextRequest) {
     console.log(`[YouTube API] Fetching transcript for video: ${videoId}`);
 
     try {
-      // First, check if video has captions using YouTube.js (fast check)
-      console.log('[YouTube API] Checking if video has captions...');
-      const yt = await getYoutubeInstance();
-      const videoInfo = await yt.getBasicInfo(videoId);
-
-      // Get video title
-      const title = videoInfo.basic_info?.title || 'Untitled YouTube Video';
-      console.log(`[YouTube API] Video title: ${title}`);
-
-      // Check caption availability
-      console.log('[YouTube API] Checking caption availability...');
-      const captions = videoInfo.captions;
-
-      if (!captions) {
-        console.warn('[YouTube API] No captions object found in videoInfo');
-        return NextResponse.json(
-          {
-            error:
-              'Transcript not available - video may not have captions enabled',
-            title,
-            videoId,
-          },
-          { status: 404 }
-        );
-      }
-
+      // Try youtube-transcript-plus FIRST (works independently, doesn't need YouTube.js)
       console.log(
-        `[YouTube API] Captions object found. Caption tracks: ${
-          captions.caption_tracks?.length || 0
-        }`
-      );
-
-      if (!captions.caption_tracks || captions.caption_tracks.length === 0) {
-        console.warn(
-          '[YouTube API] No caption tracks available. Available keys:',
-          Object.keys(captions)
-        );
-        return NextResponse.json(
-          {
-            error:
-              'Transcript not available - video may not have captions enabled',
-            title,
-            videoId,
-          },
-          { status: 404 }
-        );
-      }
-
-      console.log(
-        `[YouTube API] Found ${captions.caption_tracks.length} caption track(s)`
-      );
-
-      // Log available caption tracks
-      console.log(
-        '[YouTube API] Available caption tracks:',
-        captions.caption_tracks.map((t: any) => {
-          const name =
-            typeof t.name === 'string'
-              ? t.name
-              : t.name?.simple_text || t.name?.text || 'Unknown';
-          return {
-            language: t.language_code,
-            name: name,
-            isTranslatable: t.is_translatable,
-          };
-        })
-      );
-
-      // Captions confirmed - try youtube-transcript-plus first (more reliable)
-      console.log(
-        '[YouTube API] Captions confirmed. Attempting to fetch transcript using youtube-transcript-plus...'
+        '[YouTube API] Attempting to fetch transcript using youtube-transcript-plus (independent method)...'
       );
       try {
         const transcriptItems = await fetchTranscript(videoId);
@@ -135,6 +67,16 @@ export async function POST(request: NextRequest) {
         const transcript = transcriptItems
           .map((item: { text: string }) => item.text)
           .join(' ');
+
+        // Get video title using YouTube.js (for title only)
+        let title = 'Untitled YouTube Video';
+        try {
+          const yt = await getYoutubeInstance();
+          const videoInfo = await yt.getBasicInfo(videoId);
+          title = videoInfo.basic_info?.title || 'Untitled YouTube Video';
+        } catch (titleError) {
+          console.warn('[YouTube API] Could not fetch title, using default');
+        }
 
         console.log(
           `[YouTube API] Successfully fetched transcript using youtube-transcript-plus: ${transcript.length} chars`
@@ -168,7 +110,88 @@ export async function POST(request: NextRequest) {
         // Fall through to YouTube.js method
       }
 
-      // Fallback to YouTube.js method (we already have videoInfo and captions)
+      // Fallback to YouTube.js method
+      console.log('[YouTube API] Falling back to YouTube.js method...');
+      const yt = await getYoutubeInstance();
+      const videoInfo = await yt.getBasicInfo(videoId);
+
+      // Log videoInfo structure for debugging
+      console.log('[YouTube API] VideoInfo structure:', {
+        hasBasicInfo: !!videoInfo.basic_info,
+        basicInfoKeys: videoInfo.basic_info
+          ? Object.keys(videoInfo.basic_info)
+          : [],
+        hasCaptions: !!videoInfo.captions,
+        videoInfoKeys: Object.keys(videoInfo),
+        videoInfoType: typeof videoInfo,
+      });
+
+      // Get video title
+      const title = videoInfo.basic_info?.title || 'Untitled YouTube Video';
+      console.log(`[YouTube API] Video title: ${title}`);
+      if (!videoInfo.basic_info?.title) {
+        console.warn('[YouTube API] Warning: basic_info.title is missing!');
+        console.log(
+          '[YouTube API] basic_info content:',
+          JSON.stringify(videoInfo.basic_info, null, 2)
+        );
+      }
+
+      // Check caption availability
+      console.log('[YouTube API] Checking caption availability...');
+      const captions = videoInfo.captions;
+
+      if (!captions) {
+        console.log(
+          '[YouTube API] Captions object is null/undefined. Full videoInfo:',
+          {
+            keys: Object.keys(videoInfo),
+            hasStreamingData: !!videoInfo.streaming_data,
+            hasPlayabilityStatus: !!videoInfo.playability_status,
+          }
+        );
+        throw new Error(
+          'No captions found via YouTube.js - video may not have captions enabled'
+        );
+      }
+
+      console.log(
+        `[YouTube API] Captions object found. Caption tracks: ${
+          captions.caption_tracks?.length || 0
+        }`
+      );
+
+      if (!captions.caption_tracks || captions.caption_tracks.length === 0) {
+        console.warn(
+          '[YouTube API] No caption tracks available. Available keys:',
+          Object.keys(captions)
+        );
+        throw new Error(
+          'No caption tracks available - video may not have captions enabled'
+        );
+      }
+
+      console.log(
+        `[YouTube API] Found ${captions.caption_tracks.length} caption track(s)`
+      );
+
+      // Log available caption tracks
+      console.log(
+        '[YouTube API] Available caption tracks:',
+        captions.caption_tracks.map((t: any) => {
+          const name =
+            typeof t.name === 'string'
+              ? t.name
+              : t.name?.simple_text || t.name?.text || 'Unknown';
+          return {
+            language: t.language_code,
+            name: name,
+            isTranslatable: t.is_translatable,
+          };
+        })
+      );
+
+      // Use YouTube.js method to fetch transcript
       console.log(
         '[YouTube API] Using YouTube.js method to fetch transcript...',
         {
