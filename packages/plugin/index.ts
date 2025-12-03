@@ -305,11 +305,84 @@ export default class FileOrganizer extends Plugin {
   /**
    * Cleans up tags in formatted content by removing extra # symbols
    * Fixes cases where AI generates tags with # that then appear as ## in Obsidian
+   * Also removes # from tags in frontmatter (frontmatter tags should not have #)
+   * Also fixes YouTube embeds to use thumbnail image URLs instead of watch URLs
    */
   private cleanupTagsInContent(content: string): string {
-    // Split by lines to process more carefully
+    // Fix YouTube embeds to use Obsidian's embed syntax
+    // Convert [![YouTube Video](https://www.youtube.com/watch?v=VIDEO_ID)](https://www.youtube.com/watch?v=VIDEO_ID)
+    // Or [![YouTube Video](https://img.youtube.com/vi/VIDEO_ID/...)](https://www.youtube.com/watch?v=VIDEO_ID)
+    // To: ![](https://www.youtube.com/watch?v=VIDEO_ID) (Obsidian embed format)
+    content = content.replace(
+      /\[!\[([^\]]*)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)\)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)\)/g,
+      (match, altText, videoId1, videoId2) => {
+        // Use the first video ID (they should be the same, but handle both)
+        const videoId = videoId1 || videoId2;
+        return `![](https://www.youtube.com/watch?v=${videoId})`;
+      }
+    );
+    // Also convert thumbnail image links to embeds
+    content = content.replace(
+      /\[!\[([^\]]*)\]\(https:\/\/img\.youtube\.com\/vi\/([a-zA-Z0-9_-]+)\/[^)]+\)\]\(https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)\)/g,
+      (match, altText, videoId1, videoId2) => {
+        const videoId = videoId1 || videoId2;
+        return `![](https://www.youtube.com/watch?v=${videoId})`;
+      }
+    );
+    // First, handle frontmatter tags
+    const frontmatterRegex = /^---\n([\s\S]*?)\n---(\n|$)/;
+    const frontmatterMatch = content.match(frontmatterRegex);
+
+    if (frontmatterMatch) {
+      let frontmatterContent = frontmatterMatch[1];
+      const closingNewline = frontmatterMatch[2] || '\n';
+
+      // Clean up tags in frontmatter YAML
+      // Match tags: ["#tag1", "#tag2"] or tags: ["tag1", "#tag2"] patterns
+      // Also handles multiline arrays
+      frontmatterContent = frontmatterContent.replace(
+        /tags:\s*\[([\s\S]*?)\]/g,
+        (match, tagsContent) => {
+          // Extract all tags (handles both single-line and multiline arrays)
+          const tagMatches = tagsContent.match(/["']([^"']*)["']/g) || [];
+          const cleanedTags = tagMatches.map((tagMatch: string) => {
+            // Remove quotes and # symbols
+            const cleaned = tagMatch.replace(/^["']|["']$/g, '').replace(/^#+/, '');
+            return `"${cleaned}"`;
+          });
+
+          // Preserve original formatting (single-line vs multiline)
+          const isMultiline = tagsContent.includes('\n');
+          if (isMultiline) {
+            return `tags: [\n${cleanedTags.map((tag: string) => `  ${tag}`).join(',\n')}\n]`;
+          } else {
+            return `tags: [${cleanedTags.join(', ')}]`;
+          }
+        }
+      );
+
+      // Replace the frontmatter section with cleaned version
+      content = content.replace(
+        frontmatterRegex,
+        `---\n${frontmatterContent}\n---${closingNewline}`
+      );
+    }
+
+    // Then, clean up inline tags in the content body
     const lines = content.split('\n');
+    let inFrontmatter = false;
     const cleanedLines = lines.map(line => {
+      // Track frontmatter boundaries
+      if (line.trim() === '---') {
+        inFrontmatter = !inFrontmatter;
+        return line;
+      }
+
+      // Skip processing inside frontmatter (already handled above)
+      if (inFrontmatter) {
+        return line;
+      }
+
       // Skip markdown headers (lines starting with #)
       if (/^#{1,6}\s/.test(line)) {
         return line;

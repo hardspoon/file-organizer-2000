@@ -191,15 +191,15 @@ date_published: "{{video publication date if available in transcript or metadata
 
 topics: ["{{relevant topic 1}}", "{{relevant topic 2}}"]
 
-tags: ["#youtube", "{{#any other relevant tags based on content}}"]
+tags: ["youtube", "{{any other relevant tags based on content}}"]
 
 summary: "{{short summary of the video's main theme and key takeaways}}"
 
 ---
 
-2. A YouTube embed link in the following format:
+2. A YouTube video embed in the following format (Obsidian will automatically embed the video):
 
-[![YouTube Video](https://www.youtube.com/watch?v=XXXXXXX)](https://www.youtube.com/watch?v=XXXXXXX)
+![](https://www.youtube.com/watch?v=VIDEO_ID)
 
 3. A comprehensive, detailed summary of the key points from the video (below the embed link).
 
@@ -209,7 +209,7 @@ summary: "{{short summary of the video's main theme and key takeaways}}"
 
 - Extract topics by analyzing the main themes discussed in the transcript. Use 2-5 specific, relevant topics.
 
-- Generate tags based on the video content. Always include "#youtube" and add 2-4 additional relevant tags.
+- Generate tags based on the video content. Always include "youtube" and add 2-4 additional relevant tags. Tags in frontmatter should NOT include the "#" symbol (only use "#" for inline tags in the content body).
 
 - Create a concise summary (1-2 sentences) that captures the video's main theme and key takeaways.
 
@@ -219,7 +219,9 @@ summary: "{{short summary of the video's main theme and key takeaways}}"
 
 - Maintain the exact markdown syntax for the frontmatter block (\`---\` at the top and bottom).
 
-- Use the YouTube link format exactly as provided. Extract the video ID from the URL in the content.
+- Extract the video ID from the YouTube URL in the content, then create the embed using Obsidian's embed syntax:
+  - Format: ![](https://www.youtube.com/watch?v=VIDEO_ID) (replace VIDEO_ID with the actual video ID)
+  - This will automatically embed the YouTube video player in Obsidian
 
 - In the main body, provide a comprehensive summary with bullet points covering all major points from the video transcript.
 
@@ -239,13 +241,13 @@ date_published: "2024-01-15"
 
 topics: ["React", "Web Development", "JavaScript", "Tutorial"]
 
-tags: ["#youtube", "#react", "#webdev", "#tutorial"]
+tags: ["youtube", "react", "webdev", "tutorial"]
 
 summary: "A comprehensive guide to building modern React applications with hooks, context API, and best practices for 2024."
 
 ---
 
-[![YouTube Video](https://www.youtube.com/watch?v=XXXXXXX)](https://www.youtube.com/watch?v=XXXXXXX)
+![](https://www.youtube.com/watch?v=VIDEO_ID)
 
 ## Detailed Summary
 
