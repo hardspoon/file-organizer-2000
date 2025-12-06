@@ -36,9 +36,11 @@ export class NextRequest extends Request {
 }
 
 export class NextResponse extends Response {
-  static json(data: any) {
+  static json(data: any, init?: { status?: number; statusText?: string }) {
     return new Response(JSON.stringify(data), {
       headers: { 'content-type': 'application/json' },
+      status: init?.status || 200,
+      statusText: init?.statusText,
     });
   }
 }
