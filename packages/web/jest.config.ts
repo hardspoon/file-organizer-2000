@@ -2,7 +2,7 @@ import type { Config } from '@jest/types';
 
 const config: Config.InitialOptions = {
   // Specify the correct root directories for Jest to look for test files
-  roots: ['<rootDir>/scripts', '<rootDir>/app'],
+  roots: ['<rootDir>/scripts', '<rootDir>/app', '<rootDir>/lib'],
 
   // Use TypeScript for Jest
   transform: {
@@ -15,7 +15,8 @@ const config: Config.InitialOptions = {
   // Module name mapper for Next.js imports and other aliases
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/__mocks__/@/$1',
-    '^next/server$': '<rootDir>/__mocks__/next/server.ts'
+    '^next/server$': '<rootDir>/__mocks__/next/server.ts',
+    '^@unkey/api$': '<rootDir>/__mocks__/@unkey/api.ts'
   },
 
   // Module file extensions for importing
