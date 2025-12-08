@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { Unkey } from '@unkey/api';
 
-export const maxDuration = 900; // 15 minutes for longer audio/video files (Vercel Pro plan limit)
+export const maxDuration = 800; // Maximum allowed for Vercel Pro plan (13.3 minutes) for longer audio/video files
 
 export async function POST(request: Request) {
   let tempFilePath: string | null = null;
@@ -140,7 +140,11 @@ export async function POST(request: Request) {
     }
 
     // Process the audio file
-    console.log(`[Transcribe] Starting transcription for file: ${tempFilePath}, size: ${fileSizeInMB.toFixed(2)}MB`);
+    console.log(
+      `[Transcribe] Starting transcription for file: ${tempFilePath}, size: ${fileSizeInMB.toFixed(
+        2
+      )}MB`
+    );
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(tempFilePath),
       model: 'whisper-1',
@@ -148,7 +152,9 @@ export async function POST(request: Request) {
 
     // Log transcript length for debugging
     const transcriptLength = transcription.text.length;
-    console.log(`[Transcribe] Transcription completed. Transcript length: ${transcriptLength} characters`);
+    console.log(
+      `[Transcribe] Transcription completed. Transcript length: ${transcriptLength} characters`
+    );
 
     // Clean up temp file
     if (tempFilePath) await fsPromises.unlink(tempFilePath);
@@ -224,7 +230,11 @@ async function handlePresignedUrlTranscription(
       baseURL: process.env.OPENAI_API_BASE || 'https://api.openai.com/v1',
     });
 
-    console.log(`[Transcribe R2] Starting transcription for file from R2: ${tempFilePath}, size: ${fileSizeInMB.toFixed(2)}MB`);
+    console.log(
+      `[Transcribe R2] Starting transcription for file from R2: ${tempFilePath}, size: ${fileSizeInMB.toFixed(
+        2
+      )}MB`
+    );
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(tempFilePath),
       model: 'whisper-1',
@@ -232,7 +242,9 @@ async function handlePresignedUrlTranscription(
 
     // Log transcript length for debugging
     const transcriptLength = transcription.text.length;
-    console.log(`[Transcribe R2] Transcription completed. Transcript length: ${transcriptLength} characters`);
+    console.log(
+      `[Transcribe R2] Transcription completed. Transcript length: ${transcriptLength} characters`
+    );
 
     // Clean up
     await fsPromises.unlink(tempFilePath);
