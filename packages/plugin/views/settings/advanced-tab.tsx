@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Notice } from "obsidian";
 import FileOrganizer from "../../index";
 import { logger } from "../../services/logger";
 
@@ -25,6 +26,19 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({ plugin }) => {
   const [pdfPageLimit, setPdfPageLimit] = useState(
     plugin.settings.pdfPageLimit
   );
+
+  // Sync state with plugin settings when they change
+  useEffect(() => {
+    setUseLogs(plugin.settings.useLogs);
+    setDebugMode(plugin.settings.debugMode);
+    setEnableSelfHosting(plugin.settings.enableSelfHosting);
+    setSelfHostingURL(plugin.settings.selfHostingURL);
+  }, [
+    plugin.settings.useLogs,
+    plugin.settings.debugMode,
+    plugin.settings.enableSelfHosting,
+    plugin.settings.selfHostingURL,
+  ]);
 
   const handleToggleChange = async (value: boolean) => {
     setEnableSelfHosting(value);
@@ -98,34 +112,136 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({ plugin }) => {
       )}
 
       {useLogs && (
-        <div className="space-y-2">
-          {showLogs && (
-            <div className="max-h-96 overflow-y-auto border border-[--background-modifier-border] rounded p-2">
-              {logger.getLogs().map((log, index) => (
-                <div
-                  key={index}
-                  className={`py-1 ${
-                    log.level === "error"
-                      ? "text-[--text-error]"
-                      : log.level === "warn"
-                      ? "text-[--text-warning]"
-                      : "text-[--text-normal]"
-                  }`}
+        <div className="space-y-2 border-t border-[--background-modifier-border] pt-4 mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-[--text-normal]">View Logs</div>
+              <div className="text-sm text-[--text-muted]">
+                {logger.getLogs().length} log entries available
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {logger.getLogs().length > 0 && (
+                <>
+                  <button
+                    onClick={async () => {
+                      const logs = logger.getLogs();
+                      const logText = logs
+                        .map(
+                          log =>
+                            `[${new Date(
+                              log.timestamp
+                            ).toLocaleString()}] [${log.level.toUpperCase()}] ${
+                              log.message
+                            }${log.details ? `\n${log.details}` : ""}`
+                        )
+                        .join("\n\n");
+                      try {
+                        await navigator.clipboard.writeText(logText);
+                        new Notice(
+                          `Copied ${logs.length} log entries to clipboard`,
+                          2000
+                        );
+                      } catch (error) {
+                        console.error("Failed to copy logs:", error);
+                        new Notice("Failed to copy logs to clipboard", 3000);
+                      }
+                    }}
+                    className="clickable-icon"
+                    aria-label="Copy all logs"
+                    title="Copy all logs to clipboard"
+                  >
+                    <svg
+                      className="w-[--icon-size] h-[--icon-size]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--text-muted)"
+                      strokeWidth="2"
+                    >
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      logger.clearLogs();
+                      setShowLogs(false);
+                    }}
+                    className="clickable-icon"
+                    aria-label="Clear logs"
+                    title="Clear all logs"
+                  >
+                    <svg
+                      className="w-[--icon-size] h-[--icon-size]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--text-muted)"
+                      strokeWidth="2"
+                    >
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setShowLogs(!showLogs)}
+                className="clickable-icon"
+                aria-label={showLogs ? "Hide logs" : "Show logs"}
+                title={showLogs ? "Hide logs" : "Show logs"}
+              >
+                <svg
+                  className="w-[--icon-size] h-[--icon-size]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--text-muted)"
+                  strokeWidth="2"
                 >
-                  <span className="text-[--text-muted] text-xs">
-                    {new Date(log.timestamp).toLocaleString()}
-                  </span>{" "}
-                  <span className="font-medium">
-                    [{log.level.toUpperCase()}]
-                  </span>{" "}
-                  {log.message}
-                  {log.details && (
-                    <pre className="text-xs mt-1 text-[--text-muted]">
-                      {log.details}
-                    </pre>
+                  {showLogs ? (
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  ) : (
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
                   )}
+                </svg>
+              </button>
+            </div>
+          </div>
+          {showLogs && (
+            <div
+              className="max-h-96 overflow-y-auto border border-[--background-modifier-border] rounded p-2 bg-[--background-secondary] select-text"
+              style={{ userSelect: "text", WebkitUserSelect: "text" }}
+            >
+              {logger.getLogs().length === 0 ? (
+                <div className="text-sm text-[--text-muted] py-4 text-center">
+                  No logs available. Enable Debug Mode to start logging.
                 </div>
-              ))}
+              ) : (
+                logger.getLogs().map((log, index) => (
+                  <div
+                    key={index}
+                    className={`py-1 border-b border-[--background-modifier-border] last:border-0 select-text ${
+                      log.level === "error"
+                        ? "text-[--text-error]"
+                        : log.level === "warn"
+                        ? "text-[--text-warning]"
+                        : "text-[--text-normal]"
+                    }`}
+                    style={{ userSelect: "text", WebkitUserSelect: "text" }}
+                  >
+                    <span className="text-[--text-muted] text-xs">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </span>{" "}
+                    <span className="font-medium">
+                      [{log.level.toUpperCase()}]
+                    </span>{" "}
+                    {log.message}
+                    {log.details && (
+                      <pre className="text-xs mt-1 text-[--text-muted] whitespace-pre-wrap break-words select-text">
+                        {log.details}
+                      </pre>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
