@@ -46,7 +46,7 @@ export function FaqSection() {
           <FaqItem
             question="How to use the plugin?"
             answer={`<strong>Getting Started</strong>
-1. Install the plugin from Obsidian's community plugins
+1. <a href="https://obsidian.md/plugins?id=fileorganizer2000" class="text-accent underline hover:no-underline">Install the plugin from Obsidian's community plugins</a>
 2. Choose your preferred plan
 3. You're all set!
 

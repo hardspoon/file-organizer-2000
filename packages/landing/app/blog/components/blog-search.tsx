@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 interface BlogSearchProps {
   onSearch: (query: string) => void;
 }
 
 export function BlogSearch({ onSearch }: BlogSearchProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -30,4 +30,3 @@ export function BlogSearch({ onSearch }: BlogSearchProps) {
     </div>
   );
 }
-

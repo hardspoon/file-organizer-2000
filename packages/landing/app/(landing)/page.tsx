@@ -162,18 +162,20 @@ export default function Page() {
                 split your notes—all in real time.
               </p>
             </div>
-            {/* Meetings Feature */}
+            {/* YouTube Transcription Feature */}
             <div className="bg-background/60 backdrop-blur-sm p-8 rounded-xl border border-border/40">
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-6">
                 <Video className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Meetings</h3>
+              <h3 className="text-xl font-semibold mb-3">
+                YouTube Transcription
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Supercharge your meeting notes combining Note Companion with
-                ScreenPipe, which continuously records your conversation
-                (locally). Tap "Enhance Meeting Note" and watch as it merges the
-                last few minutes of discussion with your current file for
-                perfectly contextualized notes.
+                Turn any YouTube video into searchable, organized notes. Paste a
+                YouTube link in Chat to get instant transcripts and AI-powered
+                summaries, or drop links in your Inbox folder for automatic
+                processing. Transform video content into structured knowledge
+                that fits seamlessly into your vault.
               </p>
             </div>
           </div>

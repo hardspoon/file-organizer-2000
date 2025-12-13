@@ -17,10 +17,7 @@ export default async function BlogLayout({
         <div className="w-full border-b border-gray-700 bg-background backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-7xl px-6 py-4">
             <div className="flex items-center justify-between">
-              <Link
-                href="/"
-                className="flex items-center gap-2 text-2xl"
-              >
+              <Link href="/" className="flex items-center gap-2 text-2xl">
                 <Image
                   src="/notecompanion.png"
                   alt="note companion Logo"

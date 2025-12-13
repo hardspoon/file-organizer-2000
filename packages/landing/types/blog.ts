@@ -11,4 +11,3 @@ export interface BlogPost extends BlogPostMetadata {
   content: string;
   htmlContent: string;
 }
-

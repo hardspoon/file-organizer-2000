@@ -1,12 +1,12 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import { remark } from "remark";
-import remarkHtml from "remark-html";
-import remarkGfm from "remark-gfm";
-import { BlogPost, BlogPostMetadata } from "@/types/blog";
+import fs from 'fs';
+import path from 'path';
+import matter from 'gray-matter';
+import { remark } from 'remark';
+import remarkHtml from 'remark-html';
+import remarkGfm from 'remark-gfm';
+import { BlogPost, BlogPostMetadata } from '@/types/blog';
 
-const postsDirectory = path.join(process.cwd(), "content/blog");
+const postsDirectory = path.join(process.cwd(), 'content/blog');
 
 export function getAllPosts(): BlogPost[] {
   if (!fs.existsSync(postsDirectory)) {
@@ -15,10 +15,10 @@ export function getAllPosts(): BlogPost[] {
 
   const fileNames = fs.readdirSync(postsDirectory);
   const allPostsData = fileNames
-    .filter((fileName) => fileName.endsWith(".md"))
+    .filter((fileName) => fileName.endsWith('.md'))
     .map((fileName) => {
       const fullPath = path.join(postsDirectory, fileName);
-      const fileContents = fs.readFileSync(fullPath, "utf8");
+      const fileContents = fs.readFileSync(fullPath, 'utf8');
       const { data, content } = matter(fileContents);
 
       // Process markdown to HTML
@@ -60,4 +60,3 @@ export function getAllCategories(): string[] {
   const categories = new Set(posts.map((post) => post.category));
   return Array.from(categories).sort();
 }
-

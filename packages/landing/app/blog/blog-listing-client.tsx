@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { BlogCard } from "./components/blog-card";
-import { BlogSearch } from "./components/blog-search";
-import { CategoryFilter } from "./components/category-filter";
-import { BlogPost } from "@/types/blog";
+import { useState, useMemo } from 'react';
+import { BlogCard } from './components/blog-card';
+import { BlogSearch } from './components/blog-search';
+import { CategoryFilter } from './components/category-filter';
+import { BlogPost } from '@/types/blog';
 
 interface BlogListingClientProps {
   initialPosts: BlogPost[];
@@ -15,7 +15,7 @@ export function BlogListingClient({
   initialPosts,
   categories,
 }: BlogListingClientProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Filter posts based on search and category
@@ -49,7 +49,8 @@ export function BlogListingClient({
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight mb-4">Blog</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Stay updated with the latest features, tips, and insights about Note Companion
+            Stay updated with the latest features, tips, and insights about Note
+            Companion
           </p>
         </div>
 
@@ -68,14 +69,15 @@ export function BlogListingClient({
           <div className="text-center py-12">
             <p className="text-muted-foreground">
               {searchQuery || selectedCategory
-                ? "No posts found matching your criteria."
-                : "No blog posts yet. Check back soon!"}
+                ? 'No posts found matching your criteria.'
+                : 'No blog posts yet. Check back soon!'}
             </p>
           </div>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-6">
-              {filteredPosts.length} {filteredPosts.length === 1 ? "post" : "posts"} found
+              {filteredPosts.length}{' '}
+              {filteredPosts.length === 1 ? 'post' : 'posts'} found
             </p>
 
             {/* Blog Posts Grid */}
@@ -90,4 +92,3 @@ export function BlogListingClient({
     </div>
   );
 }
-
