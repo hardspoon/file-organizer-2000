@@ -7,10 +7,11 @@ import { InboxLogs } from "./inbox-logs";
 import { SectionHeader } from "./section-header";
 import { AppContext } from "./provider";
 import AIChatSidebar from "./ai-chat/container";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import { SyncTab } from "./synchronizer/sync-tab";
 import { StyledContainer } from "../../components/ui/utils";
 import { tw } from "../../lib/utils";
+import { Sparkles, Inbox, MessageSquare, Cloud } from "lucide-react";
 
 export const ORGANIZER_VIEW_TYPE = "fo2k.assistant.sidebar2";
 
@@ -110,22 +111,33 @@ function TabContent({
 function TabButton({
   isActive,
   onClick,
+  icon,
   children,
 }: {
   isActive: boolean;
   onClick: () => void;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
       className={tw(
-        "px-3 py-1.5 text-sm transition-colors relative",
+        "px-4 py-2 text-sm transition-all relative flex items-center gap-2",
         isActive
-          ? "text-[--text-normal] font-medium after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[--interactive-accent]"
+          ? "text-[--text-normal] font-medium"
           : "text-[--text-muted] hover:text-[--text-normal]"
       )}
+      style={
+        isActive
+          ? {
+              borderBottom: "2px solid var(--interactive-accent)",
+              marginBottom: "-1px",
+            }
+          : undefined
+      }
     >
+      {icon && <span className={tw("w-4 h-4 flex-shrink-0")}>{icon}</span>}
       {children}
     </button>
   );
@@ -153,22 +165,29 @@ function AssistantContent({
   return (
     <div className={tw("flex flex-col h-full w-full")}>
       {/* Native tab navigation */}
-      <div className={tw("flex px-3 pt-2 pb-0 border-b border-[--background-modifier-border] bg-[--background-primary]")}>
+      <div
+        className={tw(
+          "flex gap-0 px-3 pt-2 pb-0 border-b border-[--background-modifier-border] bg-[--background-primary]"
+        )}
+      >
         <TabButton
           isActive={activeTab === "organizer"}
           onClick={() => setActiveTab("organizer")}
+          icon={<Sparkles className="w-4 h-4" />}
         >
           Organizer
         </TabButton>
         <TabButton
           isActive={activeTab === "inbox"}
           onClick={() => setActiveTab("inbox")}
+          icon={<Inbox className="w-4 h-4" />}
         >
           Inbox
         </TabButton>
         <TabButton
           isActive={activeTab === "chat"}
           onClick={() => setActiveTab("chat")}
+          icon={<MessageSquare className="w-4 h-4" />}
         >
           Chat
         </TabButton>
@@ -176,6 +195,7 @@ function AssistantContent({
           <TabButton
             isActive={activeTab === "sync"}
             onClick={() => setActiveTab("sync")}
+            icon={<Cloud className="w-4 h-4" />}
           >
             Sync
           </TabButton>
@@ -184,7 +204,12 @@ function AssistantContent({
 
       {/* Content area - no padding */}
       <div className={tw("flex-1 min-h-0 w-full overflow-hidden")}>
-        <TabContent activeTab={activeTab} plugin={plugin} leaf={leaf} showSyncTab={showSyncTab} />
+        <TabContent
+          activeTab={activeTab}
+          plugin={plugin}
+          leaf={leaf}
+          showSyncTab={showSyncTab}
+        />
       </div>
     </div>
   );
@@ -252,7 +277,7 @@ export class AssistantViewWrapper extends ItemView {
 
   async onOpen(): Promise<void> {
     const container = this.containerEl.children[1];
-    container.addClass('fo2k-view');
+    container.addClass("fo2k-view");
     this.root = createRoot(container);
     this.render();
   }
@@ -277,7 +302,7 @@ export class AssistantViewWrapper extends ItemView {
   }
 
   async onClose(): Promise<void> {
-    this.containerEl.children[1].removeClass('fo2k-view');
+    this.containerEl.children[1].removeClass("fo2k-view");
     this.root?.unmount();
   }
 }
