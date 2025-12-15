@@ -6,6 +6,10 @@ import { eq } from 'drizzle-orm';
 
 import { checkUserSubscriptionStatus } from '../drizzle/schema';
 
+export type CreateLicenseKeyResponse =
+  | { error: string }
+  | { key: { key: string } };
+
 export async function isPaidUser(userId: string) {
   try {
     const isSubscribed = await checkUserSubscriptionStatus(userId);
@@ -16,7 +20,9 @@ export async function isPaidUser(userId: string) {
   }
 }
 
-export async function createLicenseKeyFromUserId(userId: string) {
+export async function createLicenseKeyFromUserId(
+  userId: string
+): Promise<CreateLicenseKeyResponse> {
   const token = process.env.UNKEY_ROOT_KEY;
   const apiId = process.env.UNKEY_API_ID;
   console.log(
@@ -130,7 +136,7 @@ export async function createLicenseKeyFromUserId(userId: string) {
   }
 }
 
-export async function createLicenseKey() {
+export async function createLicenseKey(): Promise<CreateLicenseKeyResponse> {
   const { userId } = await auth();
   console.log('Creating license key - User authenticated:', !!userId);
   if (!userId) {

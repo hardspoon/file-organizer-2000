@@ -26,13 +26,11 @@ const LicenseForm = () => {
     setLoading(true);
     try {
       const res = await createLicenseKey();
-      // @ts-expect-error - Response type is unknown at compile time
-      if (res?.error) {
-        // @ts-expect-error - Error field structure is unknown at compile time
+      if ('error' in res) {
         alert(res.error);
         return;
       }
-      if (res?.key?.key) {
+      if ('key' in res && res.key?.key) {
         setLicenseKey(res.key.key);
       } else {
         alert('Failed to create license key. Please try again or contact support.');
