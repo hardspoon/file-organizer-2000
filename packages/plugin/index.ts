@@ -195,7 +195,17 @@ export default class FileOrganizer extends Plugin {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to extract error message from response body
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use the default error message
+        }
+        throw new Error(errorMessage);
       }
 
       const { concepts } = await response.json();
@@ -225,7 +235,17 @@ export default class FileOrganizer extends Plugin {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to extract error message from response body
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use the default error message
+        }
+        throw new Error(errorMessage);
       }
 
       const { content: formattedContent } = await response.json();
@@ -603,7 +623,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      throw new Error(`Formatting failed: ${response.statusText}`);
+      // Try to extract error message from response body
+      let errorMessage = `Formatting failed: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();
@@ -817,7 +847,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to extract error message from response body
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const { documentType } = await response.json();
@@ -1012,7 +1052,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to extract error message from response body
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const { text } = await response.json();
@@ -1076,7 +1126,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to extract error message from response body
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const { tags: suggestedTags } = await response.json();
@@ -1107,10 +1167,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      // Try to extract error message from response body
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -1465,7 +1532,17 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to extract error message from response body
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      throw new Error(errorMessage);
     }
 
     const { titles } = await response.json();

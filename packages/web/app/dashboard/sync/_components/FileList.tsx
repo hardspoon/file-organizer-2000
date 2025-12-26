@@ -97,9 +97,16 @@ export function FileList({ pageSize = 12 }: FileListProps) {
         sortOrder
       );
       setPagination(result.pagination);
-    } catch (err) {
-      setError('Failed to load files. Please try again.');
-      console.error('Error fetching files:', err);
+    } catch (err: any) {
+      // Handle Server Action deployment mismatch errors
+      if (err?.message?.includes('Failed to find Server Action') ||
+          err?.message?.includes('workers')) {
+        setError('The application was recently updated. Please refresh the page and try again.');
+        console.error('Server Action deployment mismatch:', err);
+      } else {
+        setError('Failed to load files. Please try again.');
+        console.error('Error fetching files:', err);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -173,9 +180,15 @@ export function FileList({ pageSize = 12 }: FileListProps) {
 
       // Refresh the file list
       fetchFiles();
-    } catch (err) {
-      console.error('Error deleting file:', err);
-      // Show error toast or message
+    } catch (err: any) {
+      // Handle Server Action deployment mismatch errors
+      if (err?.message?.includes('Failed to find Server Action') ||
+          err?.message?.includes('workers')) {
+        alert('The application was recently updated. Please refresh the page and try again.');
+      } else {
+        console.error('Error deleting file:', err);
+        alert('Failed to delete file. Please try again.');
+      }
     }
   };
 

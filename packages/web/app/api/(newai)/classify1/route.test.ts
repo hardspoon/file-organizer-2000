@@ -153,8 +153,8 @@ describe('POST /api/(newai)/classify1', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      // classify1 route returns status 200 when error.status is undefined
-      expect(response.status).toBe(200);
+      // classify1 route returns status 500 when error.status is undefined
+      expect(response.status).toBe(500);
       expect(data.error).toBe('AI service unavailable');
     });
 
@@ -321,8 +321,8 @@ describe('POST /api/(newai)/classify1', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      // classify1 route returns status 200 with error message when error.status is undefined
-      expect(response.status).toBe(200);
+      // classify1 route returns status 500 when error.status is undefined (JSON parsing errors don't have status)
+      expect(response.status).toBe(500);
       expect(data).toHaveProperty('error');
     });
 
@@ -335,8 +335,8 @@ describe('POST /api/(newai)/classify1', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      // classify1 route returns status 200 with error message when error.status is undefined
-      expect(response.status).toBe(200);
+      // classify1 route returns status 500 when error.status is undefined (JSON parsing errors don't have status)
+      expect(response.status).toBe(500);
       expect(data).toHaveProperty('error');
     });
 

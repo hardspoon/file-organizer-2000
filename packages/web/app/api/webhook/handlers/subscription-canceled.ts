@@ -22,6 +22,7 @@ async function deleteUserSubscriptionData(userId: string) {
     .set({
       subscriptionStatus: "canceled",
       paymentStatus: "canceled",
+      billingCycle: "none", // Set to 'none' when subscription is canceled to satisfy NOT NULL constraint
     })
     .where(eq(UserUsageTable.userId, userId));
 }
@@ -41,6 +42,7 @@ export const handleSubscriptionCanceled = createWebhookHandler(
           : subscription.customer.id,
       status: "canceled",
       paymentStatus: "canceled",
+      billingCycle: "none", // Set to 'none' when subscription is canceled
       product: getSubscriptionProduct(subscription) || "none",
       plan: getSubscriptionPrice(subscription) || "none",
       lastPayment: new Date(),

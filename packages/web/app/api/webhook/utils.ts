@@ -5,13 +5,28 @@ import { CustomerData } from "./types";
 export async function updateUserSubscriptionData(
   data: CustomerData
 ): Promise<void> {
+  // Only update billingCycle if it's provided, otherwise keep existing value
+  const updateData: any = {
+    subscriptionStatus: data.status,
+    paymentStatus: data.paymentStatus,
+    maxAudioTranscriptionMinutes: 300, // 300 minutes per month for paid subscriptions
+    lastPayment: new Date(),
+    currentProduct: data.product,
+    currentPlan: data.plan,
+  };
+
+  // Only set billingCycle if provided (to avoid null constraint violations)
+  if (data.billingCycle !== undefined) {
+    updateData.billingCycle = data.billingCycle;
+  }
+
   await db
     .insert(UserUsageTable)
     .values({
       userId: data.userId,
       subscriptionStatus: data.status,
       paymentStatus: data.paymentStatus,
-      billingCycle: data.billingCycle,
+      billingCycle: data.billingCycle || "none", // Default to 'none' if not provided
       maxAudioTranscriptionMinutes: 300, // 300 minutes per month for paid subscriptions
       lastPayment: new Date(),
       currentProduct: data.product,
@@ -19,14 +34,6 @@ export async function updateUserSubscriptionData(
     })
     .onConflictDoUpdate({
       target: [UserUsageTable.userId],
-      set: {
-        subscriptionStatus: data.status,
-        paymentStatus: data.paymentStatus,
-        billingCycle: data.billingCycle,
-        maxAudioTranscriptionMinutes: 300, // 300 minutes per month for paid subscriptions
-        lastPayment: new Date(),
-        currentProduct: data.product,
-        currentPlan: data.plan,
-      },
+      set: updateData,
     });
 }

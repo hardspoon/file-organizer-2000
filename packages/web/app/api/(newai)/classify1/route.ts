@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
     await incrementAndLogTokenUsage(userId, tokens);
     const documentType = response.object.documentType;
     return NextResponse.json({ documentType });
-  } catch (error) {
+  } catch (error: any) {
     if (error) {
       return NextResponse.json(
-        { error: error.message },
-        { status: error.status }
+        { error: error.message || 'Failed to classify document' },
+        { status: error.status || 500 }
       );
     }
   }

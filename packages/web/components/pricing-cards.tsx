@@ -32,7 +32,7 @@ export function PricingCards({ onSubscriptionComplete }: PricingCardsProps) {
   const handlePlanSelection = async (planKey: string) => {
     try {
       let redirectUrl;
-      
+
       switch (planKey) {
         case "Monthly":
           redirectUrl = await createMonthlySubscriptionCheckout();
@@ -45,13 +45,20 @@ export function PricingCards({ onSubscriptionComplete }: PricingCardsProps) {
         default:
           return;
       }
-      
+
       // If there's a redirect URL, navigate to it
       if (redirectUrl) {
         window.location.href = redirectUrl;
       }
-    } catch (error) {
-      console.error('Error creating checkout:', error);
+    } catch (error: any) {
+      // Handle Server Action deployment mismatch errors
+      if (error?.message?.includes('Failed to find Server Action') ||
+          error?.message?.includes('workers')) {
+        alert('The application was recently updated. Please refresh the page and try again.');
+      } else {
+        console.error('Error creating checkout:', error);
+        alert('Failed to create checkout session. Please try again.');
+      }
     }
   };
 
@@ -115,10 +122,10 @@ export function PricingCards({ onSubscriptionComplete }: PricingCardsProps) {
         <CardContent className="pt-4 pb-6">
           <ul className="space-y-3">
             {features.map((feature: string, index: number) => {
-              const isPremiumFeature = feature.toLowerCase().includes("premium") || 
-                                       feature.toLowerCase().includes("onboarding") || 
+              const isPremiumFeature = feature.toLowerCase().includes("premium") ||
+                                       feature.toLowerCase().includes("onboarding") ||
                                        feature.toLowerCase().includes("unlimited");
-              
+
               return (
                 <li key={index} className={`flex items-start text-sm ${isPremiumFeature ? 'opacity-100' : 'opacity-90'}`}>
                   {isPremiumFeature ? (

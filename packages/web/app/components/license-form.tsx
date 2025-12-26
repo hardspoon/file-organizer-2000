@@ -36,9 +36,15 @@ const LicenseForm = () => {
         alert('Failed to create license key. Please try again or contact support.');
         console.error('Unexpected response format:', res);
       }
-    } catch (error) {
-      console.error('Error creating license key:', error);
-      alert(`Error creating license key: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: any) {
+      // Handle Server Action deployment mismatch errors
+      if (error?.message?.includes('Failed to find Server Action') ||
+          error?.message?.includes('workers')) {
+        alert('The application was recently updated. Please refresh the page and try again.');
+      } else {
+        console.error('Error creating license key:', error);
+        alert(`Error creating license key: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -47,8 +53,17 @@ const LicenseForm = () => {
   useEffect(() => {
     const handleSetIsPaidUser = async () => {
       if (!user) return;
-      const isPaid = await isPaidUser(user.id);
-      setIsPaid(isPaid);
+      try {
+        const isPaid = await isPaidUser(user.id);
+        setIsPaid(isPaid);
+      } catch (error: any) {
+        // Handle Server Action deployment mismatch errors silently
+        // Don't show alert for this background check
+        if (!error?.message?.includes('Failed to find Server Action') &&
+            !error?.message?.includes('workers')) {
+          console.error('Error checking paid user status:', error);
+        }
+      }
     };
     handleSetIsPaidUser();
   }, [user]);
