@@ -54,8 +54,9 @@ describe('Token Reset Cron Job', () => {
     const body = await response.json();
     expect(body).toEqual({
       success: true,
-      message: 'Token usage reset successful',
+      message: 'Token and audio transcription usage reset successful',
       usersReset: expect.any(Number),
+      freeTierUsersReset: expect.any(Number),
     });
 
     // Verify token usage was reset
