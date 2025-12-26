@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, UserUsageTable } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { handleAuthorizationV2 } from "@/lib/handleAuthorization";
+import { handleAuthorizationV2, AuthorizationError } from "@/lib/handleAuthorization";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +37,15 @@ export async function GET(request: NextRequest) {
       isActive: userUsage[0].subscriptionStatus === "active"
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    // Handle AuthorizationError with proper status code
+    if (error instanceof AuthorizationError || (error?.name === 'AuthorizationError')) {
+      return NextResponse.json(
+        { error: error.message || 'Authorization failed' },
+        { status: error.status || 403 }
+      );
+    }
+
     // Handle token limit errors specially
     if (error instanceof Error && error.message.includes("Token limit exceeded")) {
       return NextResponse.json({
@@ -47,8 +55,7 @@ export async function GET(request: NextRequest) {
 
     console.error("Error fetching usage data:", error);
     return NextResponse.json({
-      error: "Failed to fetch usage data",
-      message: error instanceof Error ? error.message : "Unknown error"
-    }, { status: 500 });
+      error: error instanceof Error ? error.message : "Failed to fetch usage data"
+    }, { status: error?.status || 500 });
   }
 }

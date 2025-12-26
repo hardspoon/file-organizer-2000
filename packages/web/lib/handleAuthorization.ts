@@ -66,7 +66,7 @@ async function handleLoggingV2(req: NextRequest, userId: string) {
   }
 }
 
-class AuthorizationError extends Error {
+export class AuthorizationError extends Error {
   status: number;
 
   constructor(message: string, status: number) {

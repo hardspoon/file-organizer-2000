@@ -1645,17 +1645,22 @@ export default class FileOrganizer extends Plugin {
       });
 
       if (!response.ok) {
+        // Try to extract error message from response body
+        let errorMessage = `Failed to fetch usage stats: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use the default error message
+        }
+
         // Special handling for token limit errors (429)
         if (response.status === 429) {
-          // Get the error message
-          const errorData = await response.json();
-
           // If we got a token limit error, create a synthetic response
           // with maxed out usage data
-          if (
-            errorData.error &&
-            errorData.error.includes("Token limit exceeded")
-          ) {
+          if (errorMessage.includes("Token limit exceeded")) {
             // Try to get basic info from public API
             try {
               const publicResponse = await fetch(
@@ -1683,6 +1688,8 @@ export default class FileOrganizer extends Plugin {
             return {
               tokenUsage: 100000, // Some large number
               maxTokenUsage: 100000,
+              audioTranscriptionMinutes: 0,
+              maxAudioTranscriptionMinutes: 0,
               subscriptionStatus: "active",
               currentPlan: "Subscription",
               isActive: true,
@@ -1690,7 +1697,8 @@ export default class FileOrganizer extends Plugin {
           }
         }
 
-        throw new Error(`Failed to fetch usage stats: ${response.status}`);
+        // For subscription inactive (403) or other errors, throw with specific message
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
