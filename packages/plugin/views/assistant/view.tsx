@@ -95,7 +95,11 @@ function TabContent({
           activeTab === "chat" ? "flex flex-col" : "hidden"
         )}
       >
-        <AIChatSidebar plugin={plugin} apiKey={plugin.settings.API_KEY} />
+        <AIChatSidebar
+          plugin={plugin}
+          apiKey={plugin.settings.API_KEY}
+          onTokenLimitError={onTokenLimitError}
+        />
       </div>
 
       {showSyncTab && (

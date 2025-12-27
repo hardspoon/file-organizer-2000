@@ -18,7 +18,35 @@ export async function POST(req: NextRequest) {
   return createDataStreamResponse({
     execute: async (dataStream) => {
       try {
-        const { userId } = await handleAuthorizationV2(req);
+        // Handle authorization - catch AuthorizationError to return proper status codes
+        let userId: string;
+        try {
+          const authResult = await handleAuthorizationV2(req);
+          userId = authResult.userId;
+        } catch (authError: unknown) {
+          // Import AuthorizationError dynamically
+          const { AuthorizationError } = await import(
+            '@/lib/handleAuthorization'
+          );
+
+          if (authError instanceof AuthorizationError) {
+            console.error('[Chat API] Authorization error:', {
+              message: authError.message,
+              status: authError.status,
+              timestamp: new Date().toISOString(),
+            });
+            // Write error to stream and throw to stop execution
+            dataStream.writeData(
+              JSON.stringify({
+                error: authError.message,
+                status: authError.status,
+              })
+            );
+            throw authError;
+          }
+          // Re-throw if it's not an AuthorizationError
+          throw authError;
+        }
         const {
           messages,
           newUnifiedContext,
@@ -585,12 +613,22 @@ export async function POST(req: NextRequest) {
           result.mergeIntoDataStream(dataStream);
         }
       } catch (error) {
-        console.error('Error in POST request:', error);
+        console.error('[Chat API] Error in POST request:', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : typeof error,
+          timestamp: new Date().toISOString(),
+        });
         throw error;
       }
     },
     onError: (error) => {
-      console.error('Error in stream:', error);
+      console.error('[Chat API] Error in stream:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : typeof error,
+        timestamp: new Date().toISOString(),
+      });
       return error instanceof Error ? error.message : String(error);
     },
   });

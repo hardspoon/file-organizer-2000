@@ -56,11 +56,13 @@ interface ChatComponentProps {
   plugin: FileOrganizer;
   apiKey: string;
   inputRef: React.RefObject<HTMLDivElement>;
+  onTokenLimitError?: (error: string) => void;
 }
 
 export const ChatComponent: React.FC<ChatComponentProps> = ({
   apiKey,
   inputRef,
+  onTokenLimitError,
 }) => {
   const plugin = usePlugin();
   const app = plugin.app;
@@ -429,7 +431,12 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
     },
     keepLastMessageOnError: true,
     onError: error => {
-      logger.error(error.message);
+      logger.error("Chat error:", error);
+      logger.error("Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
 
       // Check if this is a tool invocation error (non-fatal)
       const isToolError = error.message?.includes(
@@ -445,20 +452,60 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
 
       let userFriendlyMessage = "Something went wrong. Please try again.";
 
-      if (error.message?.toLowerCase().includes("api key")) {
+      // Check error type first (more reliable than message content)
+      if (error.name === "TypeError" && error.message?.includes("fetch")) {
+        // This is a real network/fetch error
+        userFriendlyMessage =
+          "Connection failed. Please check your internet connection.";
+      } else if (error.message?.toLowerCase().includes("api key")) {
         userFriendlyMessage =
           "API key issue detected. Please check your settings.";
+      } else if (
+        error.message?.toLowerCase().includes("unauthorized") ||
+        error.message?.toLowerCase().includes("401")
+      ) {
+        userFriendlyMessage =
+          "Authentication failed. Please check your API key in settings.";
+      } else if (
+        error.message?.toLowerCase().includes("forbidden") ||
+        error.message?.toLowerCase().includes("403")
+      ) {
+        userFriendlyMessage =
+          "Access denied. Please check your subscription status.";
       } else if (
         error.message?.toLowerCase().includes("network") ||
         error.message?.toLowerCase().includes("fetch")
       ) {
         userFriendlyMessage =
           "Connection failed. Please check your internet connection.";
-      } else if (error.message?.toLowerCase().includes("rate limit")) {
+      } else if (
+        error.message?.toLowerCase().includes("token limit exceeded") ||
+        error.message?.toLowerCase().includes("credits limit exceeded")
+      ) {
+        // Show the full error message for token limit - it includes usage details
+        userFriendlyMessage = error.message;
+        // Notify parent component to show upgrade button
+        onTokenLimitError?.(error.message);
+      } else if (
+        error.message?.toLowerCase().includes("rate limit") ||
+        error.message?.toLowerCase().includes("429")
+      ) {
         userFriendlyMessage =
           "Rate limit reached. Please wait a moment and try again.";
-      } else if (error.message?.toLowerCase().includes("timeout")) {
+      } else if (
+        error.message?.toLowerCase().includes("timeout") ||
+        error.message?.toLowerCase().includes("timed out")
+      ) {
         userFriendlyMessage = "Request timed out. Please try again.";
+      } else if (
+        error.message?.toLowerCase().includes("500") ||
+        error.message?.toLowerCase().includes("internal server error")
+      ) {
+        userFriendlyMessage =
+          "Server error occurred. Please try again in a moment.";
+      } else if (error.message?.toLowerCase().includes("cors")) {
+        userFriendlyMessage =
+          "CORS error. Please check your server URL configuration.";
       } else if (error.message) {
         // If we have a specific error message, show it fully (don't truncate)
         userFriendlyMessage = error.message;

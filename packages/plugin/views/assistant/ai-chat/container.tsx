@@ -6,9 +6,14 @@ import { Button } from "./button";
 interface AIChatSidebarProps {
   plugin: FileOrganizer;
   apiKey: string;
+  onTokenLimitError?: (error: string) => void;
 }
 
-const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ plugin, apiKey }) => {
+const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
+  plugin,
+  apiKey,
+  onTokenLimitError
+}) => {
   const inputRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -19,6 +24,7 @@ const AIChatSidebar: React.FC<AIChatSidebarProps> = ({ plugin, apiKey }) => {
           plugin={plugin}
           apiKey={apiKey}
           inputRef={inputRef}
+          onTokenLimitError={onTokenLimitError}
         />
       </div>
     </div>
