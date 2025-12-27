@@ -156,9 +156,26 @@ async function handleApiKeyAuth(
     tokenPrefix: token ? token.substring(0, 10) + '...' : 'NO TOKEN',
   });
 
+  // Basic key format validation - Unkey keys are typically alphanumeric
+  if (!token || token.trim().length === 0) {
+    logger.error('Empty or invalid token provided', null);
+    return null;
+  }
+
+  // Check if token looks like a valid Unkey format (basic validation)
+  // Unkey keys are typically 20+ characters, alphanumeric
+  const trimmedToken = token.trim();
+  if (trimmedToken.length < 10) {
+    logger.error('Token too short to be valid', null, {
+      tokenLength: trimmedToken.length,
+    });
+    return null;
+  }
+
   try {
     console.log('[handleApiKeyAuth] Starting verification', {
       tokenPrefix: token.substring(0, 10) + '...',
+      tokenLength: token.length,
       hasRootKey: !!process.env.UNKEY_ROOT_KEY,
       hasApiId: !!process.env.UNKEY_API_ID,
     });
@@ -251,12 +268,36 @@ async function handleApiKeyAuth(
     });
 
     if (!result || !result.valid) {
-      console.error('[handleApiKeyAuth] Validation failed', {
-        code: result?.code,
-        error: error?.message || error?.detail,
-        fullResult: JSON.stringify(result, null, 2),
-      });
-      logger.error('API key validation failed', error, { code: result?.code });
+      const errorCode = result?.code;
+      const errorMessage = error?.message || error?.detail;
+
+      // Special handling for NOT_FOUND - key doesn't exist in Unkey
+      if (errorCode === 'NOT_FOUND') {
+        console.error('[handleApiKeyAuth] API key NOT_FOUND in Unkey', {
+          code: errorCode,
+          tokenPrefix: token.substring(0, 10) + '...',
+          tokenLength: token.length,
+          apiId: process.env.UNKEY_API_ID,
+          possibleReasons: [
+            'Key was deleted or revoked in Unkey',
+            'Key was created for a different API (apiId mismatch)',
+            'Key was never properly created',
+            'Key format is incorrect',
+          ],
+        });
+        logger.error('API key not found in Unkey', null, {
+          code: errorCode,
+          tokenLength: token.length,
+          apiId: process.env.UNKEY_API_ID,
+        });
+      } else {
+        console.error('[handleApiKeyAuth] Validation failed', {
+          code: errorCode,
+          error: errorMessage,
+          fullResult: JSON.stringify(result, null, 2),
+        });
+        logger.error('API key validation failed', error, { code: errorCode });
+      }
       return null;
     }
 

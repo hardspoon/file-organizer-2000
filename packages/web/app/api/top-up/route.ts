@@ -36,7 +36,34 @@ async function ensureAuthorizedUser(req: NextRequest) {
     const { userId } = await handleAuthorizationV2(req);
     return { userId, licenseKey: initialLicenseKey };
   } catch (error) {
-    console.log('Authorization failed, creating anonymous user:', error);
+    // Log detailed information about the auth failure
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStatus =
+      error instanceof Error && 'status' in error
+        ? (error as { status: number }).status
+        : 'unknown';
+
+    console.log('Authorization failed, creating anonymous user:', {
+      error: errorMessage,
+      status: errorStatus,
+      hadLicenseKey: !!initialLicenseKey,
+      licenseKeyPrefix: initialLicenseKey
+        ? initialLicenseKey.substring(0, 10) + '...'
+        : 'none',
+      path: req.nextUrl.pathname,
+    });
+
+    // If a license key was provided but auth failed, log a warning
+    if (initialLicenseKey) {
+      console.warn(
+        'License key provided but authentication failed - creating anonymous user as fallback',
+        {
+          keyPrefix: initialLicenseKey.substring(0, 10) + '...',
+          error: errorMessage,
+        }
+      );
+    }
+
     return createFallbackUser();
   }
 }
