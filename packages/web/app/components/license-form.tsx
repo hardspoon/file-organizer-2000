@@ -116,43 +116,41 @@ const LicenseForm = () => {
           {licenseKey && licenseKey.length > 0 ? (
             <>
               <Card className="w-full mt-8 rounded-lg border-2 border-purple-200">
-                <CardHeader>
+                <CardHeader className="pb-4">
                   <CardDescription className="text-center text-base font-semibold text-purple-700">
                     Your License Key
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid items-center w-full gap-4">
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          name="licenseKey"
-                          value={licenseKey}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          onClick={handleCopyKey}
-                          variant="outline"
-                          size="icon"
-                          className="shrink-0"
-                        >
-                          {copied ? (
-                            <Check className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground text-center">
-                        {copied
-                          ? 'Copied to clipboard!'
-                          : 'Click the copy button to copy your key'}
-                      </p>
+                <CardContent className="pt-0 pb-6">
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex gap-3">
+                      <Input
+                        name="licenseKey"
+                        value={licenseKey}
+                        readOnly
+                        className="font-mono text-sm flex-1"
+                      />
+                      <Button
+                        onClick={handleCopyKey}
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      {copied
+                        ? 'Copied to clipboard!'
+                        : 'Click the copy button to copy your key'}
+                    </p>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-center pt-4 pb-6">
                   <Button
                     onClick={handleCreateKey}
                     disabled={loading}
@@ -162,7 +160,7 @@ const LicenseForm = () => {
                     {loading ? 'Generating...' : 'Create New Key'}
                   </Button>
                 </CardFooter>
-                <CardDescription className="text-center text-xs px-6 pb-4">
+                <CardDescription className="text-center text-xs px-6 pb-6">
                   Save this key securely. You can create additional keys if
                   needed.
                 </CardDescription>
