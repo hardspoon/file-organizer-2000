@@ -14,7 +14,7 @@ export default function TopUpSuccess() {
             Top-up Successful!
           </h1>
           <p className="text-gray-600">
-            Your tokens have been added to your account successfully.
+            Your credits have been added to your account successfully.
           </p>
 
           <div className="flex flex-col gap-4 mt-8">

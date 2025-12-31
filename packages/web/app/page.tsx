@@ -10,6 +10,16 @@ export default async function MainPage() {
     redirect('/dashboard/self-hosted');
   }
 
+  // Check if Clerk is configured before using auth()
+  const hasClerkConfig =
+    !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    !!process.env.CLERK_SECRET_KEY;
+
+  if (!hasClerkConfig) {
+    // If user management is enabled but Clerk isn't configured, redirect to self-hosted
+    redirect('/dashboard/self-hosted');
+  }
+
   const { userId } = await auth();
 
   const billingCycle = await getUserBillingCycle(userId);

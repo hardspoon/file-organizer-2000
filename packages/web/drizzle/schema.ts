@@ -125,6 +125,9 @@ export const createEmptyUserUsage = async (userId: string) => {
     subscriptionStatus: 'active', // Legacy plan is considered active
     paymentStatus: 'free', // Legacy plan doesn't require payment
     tier: 'free',
+    currentPlan: 'Free Plan',
+  }).onConflictDoNothing({
+    target: [UserUsageTable.userId],
   });
 };
 

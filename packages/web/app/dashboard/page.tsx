@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
+import * as React from 'react';
+import Link from 'next/link';
 import {
   CreditCard,
   FileText,
@@ -14,9 +14,8 @@ import {
   Calendar,
   FileSymlink,
   RefreshCw,
-  Settings,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -24,17 +23,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 export default function DashboardPage() {
   const [apiUsage, setApiUsage] = React.useState({
     tokenUsage: 0,
     maxTokenUsage: 0,
-    subscriptionStatus: "",
-    currentPlan: "",
-    nextReset: "",
+    audioTranscriptionMinutes: 0,
+    maxAudioTranscriptionMinutes: 0,
+    subscriptionStatus: '',
+    currentPlan: '',
+    nextReset: '',
   });
   const [recentFiles, setRecentFiles] = React.useState<
     Array<{
@@ -56,25 +57,25 @@ export default function DashboardPage() {
         setError(null);
 
         // Fetch API usage data
-        const usageResponse = await fetch("/api/usage",  {});
+        const usageResponse = await fetch('/api/usage', {});
 
         if (!usageResponse.ok) {
-          throw new Error("Failed to fetch API usage data");
+          throw new Error('Failed to fetch API usage data');
         }
         const usageData = await usageResponse.json();
         setApiUsage(usageData);
 
         // Fetch recent files
-        const filesResponse = await fetch("/api/files/recent");
+        const filesResponse = await fetch('/api/files/recent');
         if (!filesResponse.ok) {
-          throw new Error("Failed to fetch recent files");
+          throw new Error('Failed to fetch recent files');
         }
         const filesData = await filesResponse.json();
         setRecentFiles(filesData);
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
+        console.error('Error fetching dashboard data:', err);
         setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
+          err instanceof Error ? err.message : 'An unknown error occurred'
         );
       } finally {
         setIsLoading(false);
@@ -87,9 +88,9 @@ export default function DashboardPage() {
   // Helper to get icon based on file type
   const getFileIcon = (type: string) => {
     switch (type) {
-      case "markdown":
+      case 'markdown':
         return <FileText className="h-4 w-4 text-blue-500" />;
-      case "image":
+      case 'image':
         return <Image className="h-4 w-4 text-purple-500" />;
       default:
         return <FileSymlink className="h-4 w-4 text-gray-500" />;
@@ -104,13 +105,13 @@ export default function DashboardPage() {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return "Today";
+      return 'Today';
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
+      return 'Yesterday';
     } else {
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
       });
     }
   };
@@ -134,30 +135,30 @@ export default function DashboardPage() {
 
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
-      formData.append("files", files[i]);
+      formData.append('files', files[i]);
     }
 
     try {
-      const response = await fetch("/api/files/upload", {
-        method: "POST",
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload files");
+        throw new Error('Failed to upload files');
       }
 
       // Refresh the recent files list
-      const filesResponse = await fetch("/api/files/recent");
+      const filesResponse = await fetch('/api/files/recent');
       if (!filesResponse.ok) {
-        throw new Error("Failed to fetch recent files");
+        throw new Error('Failed to fetch recent files');
       }
       const filesData = await filesResponse.json();
       setRecentFiles(filesData);
     } catch (err) {
-      console.error("Error uploading files:", err);
+      console.error('Error uploading files:', err);
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
+        err instanceof Error ? err.message : 'An unknown error occurred'
       );
     }
   };
@@ -176,7 +177,11 @@ export default function DashboardPage() {
       <Card className="w-full">
         <CardHeader className="pb-4">
           <CardTitle>API Usage</CardTitle>
-          <CardDescription>Your current token usage and limits</CardDescription>
+          <CardDescription>
+            {!isLoading && apiUsage.maxAudioTranscriptionMinutes > 0
+              ? 'Your current token and transcription minutes usage'
+              : 'Your current token usage'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -193,7 +198,7 @@ export default function DashboardPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Token Usage</span>
                   <span className="text-sm text-muted-foreground">
-                    {formatNumber(apiUsage.tokenUsage)} /{" "}
+                    {formatNumber(apiUsage.tokenUsage)} /{' '}
                     {formatNumber(apiUsage.maxTokenUsage)} tokens
                   </span>
                 </div>
@@ -206,6 +211,28 @@ export default function DashboardPage() {
                 />
               </div>
 
+              {/* Audio Transcription Minutes Usage */}
+              {apiUsage.maxAudioTranscriptionMinutes > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">
+                      Audio Transcription Minutes
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {apiUsage.audioTranscriptionMinutes.toFixed(1)} /{' '}
+                      {apiUsage.maxAudioTranscriptionMinutes} min
+                    </span>
+                  </div>
+                  <Progress
+                    value={calculatePercentage(
+                      apiUsage.audioTranscriptionMinutes,
+                      apiUsage.maxAudioTranscriptionMinutes
+                    )}
+                    className="h-2"
+                  />
+                </div>
+              )}
+
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
@@ -213,10 +240,10 @@ export default function DashboardPage() {
                     <span className="text-sm font-medium">Current Plan</span>
                   </div>
                   <p className="text-xl font-bold">
-                    {apiUsage.currentPlan || "Free"}
+                    {apiUsage.currentPlan || 'Free'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {apiUsage.subscriptionStatus || "Active"}
+                    {apiUsage.subscriptionStatus || 'Active'}
                   </p>
                 </div>
 
@@ -243,7 +270,7 @@ export default function DashboardPage() {
                     <span className="text-sm font-medium">Next Reset</span>
                   </div>
                   <p className="text-xl font-bold">
-                    {apiUsage.nextReset || "May 1"}
+                    {apiUsage.nextReset || 'Loading...'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Usage resets on this date
@@ -264,52 +291,52 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-1">
-        {/* New Mobile App Card */}
-        <Card className="col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle>Note Companion Mobile</CardTitle>
-            {/* <CardDescription>Our brand new mobile experience</CardDescription> */}
-          </CardHeader>
-          <CardContent className="pt-2">
-            <div className="flex items-start gap-4">
-              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-blue-50">
-                <Smartphone className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Now in Beta</h3>
-                <p className="text-sm text-muted-foreground">
-                  The Note Companion mobile app is now available for iOS. Capture
-                  notes, screenshots, and sync them directly to your vault with
-                  ease.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                    iOS
-                  </Badge>
-                  <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
-                    Share Extension
-                  </Badge>
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                    Instant Sync
-                  </Badge>
+      {/* Mobile App Card - Hidden for now */}
+      {false && (
+        <div className="grid gap-6 md:grid-cols-1">
+          {/* New Mobile App Card */}
+          <Card className="col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle>Note Companion Mobile</CardTitle>
+              {/* <CardDescription>Our brand new mobile experience</CardDescription> */}
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 flex items-center justify-center rounded-full bg-blue-50">
+                  <Smartphone className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Now in Beta</h3>
+                  <p className="text-sm text-muted-foreground">
+                    The Note Companion mobile app is now available for iOS.
+                    Capture notes, screenshots, and sync them directly to your
+                    vault with ease.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                      iOS
+                    </Badge>
+                    <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      Share Extension
+                    </Badge>
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                      Instant Sync
+                    </Badge>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="pt-0">
-            <Button className="w-full" size="sm" asChild>
-              <Link
-                href="https://discord.gg/udQnCRFyus"
-                target="_blank"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Join early access through discord
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+            </CardContent>
+            <CardFooter className="pt-0">
+              <Button className="w-full" size="sm" asChild>
+                <Link href="https://discord.gg/udQnCRFyus" target="_blank">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Join early access through discord
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
 
       {/* Recent Files Card */}
       <Card className="w-full">
@@ -345,11 +372,7 @@ export default function DashboardPage() {
               <p className="text-xs mt-1">Upload files to see them here</p>
               <div className="mt-4">
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mx-auto"
-                  >
+                  <Button variant="outline" size="sm" className="mx-auto">
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Files
                   </Button>
@@ -385,7 +408,6 @@ export default function DashboardPage() {
             </div>
           )}
         </CardContent>
-       
       </Card>
     </div>
   );

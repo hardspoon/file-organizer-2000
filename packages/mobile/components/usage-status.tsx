@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Platform, TouchableOpacity, Linking } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
+  TouchableOpacity,
+  Linking,
+} from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedView } from './ThemedView';
@@ -16,6 +23,8 @@ type UsageData = {
   maxTokenUsage: number;
   subscriptionStatus: string;
   tier: string;
+  // Note: audioTranscriptionMinutes and maxAudioTranscriptionMinutes are intentionally
+  // excluded from the mobile app display for now, even if present in the API response
 };
 
 export function UsageStatus({ compact = false }: UsageStatusProps) {
@@ -30,7 +39,7 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
       try {
         const token = await getToken();
         if (!token) {
-          setError("Authentication required");
+          setError('Authentication required');
           setLoading(false);
           return;
         }
@@ -38,9 +47,9 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
         const response = await fetch(`${API_URL}/api/usage`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         if (!response.ok) {
@@ -51,8 +60,8 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
         setUsageData(data);
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching usage info:", err);
-        setError("Could not load usage information");
+        console.error('Error fetching usage info:', err);
+        setError('Could not load usage information');
         setLoading(false);
       }
     }
@@ -62,16 +71,24 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
 
   if (loading) {
     return (
-      <ThemedView variant="elevated" style={[styles.card, compact && styles.compactCard]}>
+      <ThemedView
+        variant="elevated"
+        style={[styles.card, compact && styles.compactCard]}
+      >
         <ActivityIndicator size="small" color={primaryColor} />
-        <ThemedText style={{ marginTop: 8 }}>Loading usage information...</ThemedText>
+        <ThemedText style={{ marginTop: 8 }}>
+          Loading usage information...
+        </ThemedText>
       </ThemedView>
     );
   }
 
   if (error) {
     return (
-      <ThemedView variant="elevated" style={[styles.card, compact && styles.compactCard]}>
+      <ThemedView
+        variant="elevated"
+        style={[styles.card, compact && styles.compactCard]}
+      >
         <MaterialIcons name="error-outline" size={24} color="#E53E3E" />
         <ThemedText style={{ marginTop: 8 }}>{error}</ThemedText>
       </ThemedView>
@@ -82,7 +99,7 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
   const getPlanDisplay = (plan: string) => {
     switch (plan?.toLowerCase()) {
       case 'free':
-        return 'Legacy Plan';
+        return 'Free Plan';
       case 'monthly':
         return 'Monthly Subscription';
       case 'yearly':
@@ -93,19 +110,20 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
   };
 
   return (
-    <ThemedView variant="elevated" style={[styles.card, compact && styles.compactCard]}>
+    <ThemedView
+      variant="elevated"
+      style={[styles.card, compact && styles.compactCard]}
+    >
       <View style={styles.planInfo}>
-        <MaterialIcons 
-          name="star" 
-          size={24} 
-          color={primaryColor} 
-        />
+        <MaterialIcons name="star" size={24} color={primaryColor} />
         <View style={styles.planDetails}>
           <ThemedText type="defaultSemiBold">
             {getPlanDisplay(usageData?.tier || 'free')}
           </ThemedText>
           <ThemedText colorName="textSecondary" type="caption">
-            {usageData?.subscriptionStatus === 'active' ? 'Active Account' : 'Free Usage'}
+            {usageData?.subscriptionStatus === 'active'
+              ? 'Active Account'
+              : 'Free Usage'}
           </ThemedText>
         </View>
       </View>
@@ -116,14 +134,17 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
             Usage: {usageData.tokenUsage} / {usageData.maxTokenUsage} tokens
           </ThemedText>
           <View style={styles.usageBar}>
-            <View 
+            <View
               style={[
-                styles.usageProgress, 
-                { 
-                  width: `${Math.min(100, (usageData.tokenUsage / usageData.maxTokenUsage) * 100)}%`,
-                  backgroundColor: primaryColor
-                }
-              ]} 
+                styles.usageProgress,
+                {
+                  width: `${Math.min(
+                    100,
+                    (usageData.tokenUsage / usageData.maxTokenUsage) * 100
+                  )}%`,
+                  backgroundColor: primaryColor,
+                },
+              ]}
             />
           </View>
         </View>
@@ -211,4 +232,4 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
-});        
+});

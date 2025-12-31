@@ -343,6 +343,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         )}
       </div>
 
+      <AccountData
+        plugin={plugin}
+        onLicenseKeyChange={handleLicenseKeyChange}
+      />
+
       <div className="bg-[--background-primary-alt] p-4 rounded-lg">
         <h3 className="text-lg font-medium mb-4 mt-0">Quick Tutorial</h3>
         <div className="youtube-embed">
@@ -350,17 +355,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
             width="100%"
             height="315"
             src="https://www.youtube.com/embed/X4yN4ykTJIo?si=QoMN-wNZSo1woQcB"
-            frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           ></iframe>
         </div>
       </div>
-
-      <AccountData
-        plugin={plugin}
-        onLicenseKeyChange={handleLicenseKeyChange}
-      />
 
       <div className="bg-[--background-primary-alt] p-4 rounded-lg">
         <p className="file-organizer-support-text mb-4">

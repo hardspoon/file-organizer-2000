@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         audioTranscriptionMinutes: 0,
         maxAudioTranscriptionMinutes: 0, // Default to 0 for new users
         subscriptionStatus: 'inactive',
-        currentPlan: 'Legacy Plan',
+        currentPlan: 'Free Plan',
         isActive: false,
       });
     }
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       maxAudioTranscriptionMinutes:
         userUsage[0].maxAudioTranscriptionMinutes || 0,
       subscriptionStatus: userUsage[0].subscriptionStatus || 'inactive',
-      currentPlan: userUsage[0].currentPlan || 'Legacy Plan',
+      currentPlan: userUsage[0].currentPlan || 'Free Plan',
       isActive,
     });
   } catch (error) {

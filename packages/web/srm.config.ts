@@ -1,7 +1,7 @@
 // Type definitions for subscription and product system
 export type PlanType = 'subscription' | 'free';
-export type ProductType = 'subscription' | 'top_up' | 'free';
-export type Plan = 'monthly' | 'yearly' | 'top_up' | 'free';
+export type ProductType = 'subscription' | 'top_up' | 'top_up_minutes' | 'free';
+export type Plan = 'monthly' | 'yearly' | 'top_up' | 'top_up_minutes' | 'free';
 
 export interface ProductMetadata {
   type: PlanType;
@@ -51,6 +51,7 @@ export const PRICES = {
   MONTHLY: 1500, // $15.00
   YEARLY: 11900, // $119.00
   TOP_UP: 1500, // $15.00
+  TOP_UP_MINUTES: 1000, // $10.00
 } as const;
 
 // Features by plan type
@@ -113,6 +114,20 @@ export const PRODUCTS = {
       },
     },
     features: ['One-time purchase of additional tokens'],
+  },
+  PayOnceTopUpMinutes: {
+    name: 'Note Companion - Minutes Top Up',
+    metadata: {
+      type: 'pay-once' as PlanType,
+      plan: 'top_up_minutes' as Plan,
+    },
+    prices: {
+      top_up_minutes: {
+        amount: PRICES.TOP_UP_MINUTES,
+        type: 'one_time' as const,
+      },
+    },
+    features: ['One-time purchase of 300 transcription minutes'],
   },
 } as const;
 

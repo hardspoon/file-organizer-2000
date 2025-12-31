@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient, auth } from "@clerk/nextjs/server";
 import { createLicenseKeyFromUserId } from "@/app/actions";
+import { createEmptyUserUsage } from "@/drizzle/schema";
 
 export async function POST(req: NextRequest) {
   console.log('🔒 Sign-in attempt started');
@@ -78,6 +79,9 @@ export async function POST(req: NextRequest) {
         error: licenseKeyResult.error,
       }, { status: 500 });
     }
+
+    // Ensure user usage record exists (creates if doesn't exist, no-op if exists)
+    await createEmptyUserUsage(users[0].id);
 
     console.log('✅ License key generated successfully');
 

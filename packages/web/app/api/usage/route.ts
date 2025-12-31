@@ -11,6 +11,14 @@ export async function GET(request: NextRequest) {
     // This will throw an error if not authorized
     const { userId } = await handleAuthorizationV2(request);
 
+    // Calculate next reset date (1st of next month)
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextReset = nextMonth.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+    });
+
     // Get usage information
     const userUsage = await db
       .select()
@@ -25,7 +33,8 @@ export async function GET(request: NextRequest) {
         audioTranscriptionMinutes: 0,
         maxAudioTranscriptionMinutes: 0, // Default to 0 for legacy/free tier
         subscriptionStatus: 'active',
-        currentPlan: 'Legacy Plan',
+        currentPlan: 'Free Plan',
+        nextReset,
         isActive: true,
       });
     }
@@ -42,7 +51,8 @@ export async function GET(request: NextRequest) {
       maxAudioTranscriptionMinutes:
         userUsage[0].maxAudioTranscriptionMinutes || 0,
       subscriptionStatus: userUsage[0].subscriptionStatus || 'inactive',
-      currentPlan: userUsage[0].currentPlan || 'Legacy Plan',
+      currentPlan: userUsage[0].currentPlan || 'Free Plan',
+      nextReset,
       isActive,
     });
   } catch (error: unknown) {

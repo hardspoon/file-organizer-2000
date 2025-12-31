@@ -36,6 +36,36 @@ async function handleTopUp(userId: string, tokens: number,) {
     });
 }
 
+async function handleTopUpMinutes(userId: string, minutes: number) {
+  console.log("Handling minutes top-up for user", userId, "with", minutes, "minutes");
+
+  await db
+    .insert(UserUsageTable)
+    .values({
+      userId,
+      maxTokenUsage: 0,
+      tokenUsage: 0,
+      audioTranscriptionMinutes: 0,
+      maxAudioTranscriptionMinutes: minutes,
+      subscriptionStatus: 'active',
+      paymentStatus: 'succeeded',
+      currentProduct: 'top_up_minutes',
+      currentPlan: 'top_up_minutes',
+      billingCycle: 'top-up-minutes',
+      lastPayment: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [UserUsageTable.userId],
+      set: {
+        maxAudioTranscriptionMinutes: sql`COALESCE(${UserUsageTable.maxAudioTranscriptionMinutes}, 0) + ${minutes}`,
+        lastPayment: new Date(),
+        subscriptionStatus: 'active',
+        paymentStatus: 'succeeded',
+        // Don't reset token limits for minutes top-ups
+      },
+    });
+}
+
 
 
 function createCustomerData(paymentIntent: Stripe.PaymentIntent): CustomerData {
@@ -59,12 +89,21 @@ export const handlePaymentIntentSucceeded = createWebhookHandler(
     const userId = paymentIntent.metadata?.userId;
     const type = paymentIntent.metadata?.type;
     const tokens = parseInt(paymentIntent.metadata?.tokens || "0");
+    const minutes = parseInt(paymentIntent.metadata?.minutes || "0");
 
     if (type === "top_up") {
       await handleTopUp(userId, tokens);
       return {
         success: true,
         message: `Successfully processed top-up for ${userId}`,
+      };
+    }
+
+    if (type === "top_up_minutes") {
+      await handleTopUpMinutes(userId, minutes);
+      return {
+        success: true,
+        message: `Successfully processed minutes top-up for ${userId}`,
       };
     }
 

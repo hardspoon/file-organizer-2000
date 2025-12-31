@@ -161,6 +161,44 @@ async function handleTopUp(userId: string, tokens: number) {
     });
 }
 
+async function handleTopUpMinutes(userId: string, minutes: number) {
+  console.log(
+    'Handling minutes top-up for user',
+    userId,
+    'with',
+    minutes,
+    'minutes'
+  );
+
+  await db
+    .insert(UserUsageTable)
+    .values({
+      userId,
+      maxTokenUsage: 0,
+      tokenUsage: 0,
+      audioTranscriptionMinutes: 0,
+      maxAudioTranscriptionMinutes: minutes,
+      subscriptionStatus: 'active',
+      paymentStatus: 'succeeded',
+      currentProduct: config.products.PayOnceTopUpMinutes.metadata.type,
+      currentPlan: config.products.PayOnceTopUpMinutes.metadata.plan,
+      billingCycle: config.products.PayOnceTopUpMinutes.metadata.type,
+      lastPayment: new Date(),
+      hasCatalystAccess: true,
+    })
+    .onConflictDoUpdate({
+      target: [UserUsageTable.userId],
+      set: {
+        maxAudioTranscriptionMinutes: sql`COALESCE(${UserUsageTable.maxAudioTranscriptionMinutes}, 0) + ${minutes}`,
+        lastPayment: new Date(),
+        subscriptionStatus: 'active',
+        paymentStatus: 'succeeded',
+        hasCatalystAccess: true,
+        // Don't reset token limits for minutes top-ups
+      },
+    });
+}
+
 export const handleCheckoutComplete = createWebhookHandler(async (event) => {
   const session = event.data.object as Stripe.Checkout.Session;
   console.log('checkout complete', session);
@@ -197,7 +235,7 @@ export const handleCheckoutComplete = createWebhookHandler(async (event) => {
       session as Stripe.Checkout.Session & { metadata: ProductMetadata }
     );
   }
-  // pay once top up
+  // pay once top up (tokens)
   else if (
     session.metadata?.plan === config.products.PayOnceTopUp.metadata.plan
   ) {
@@ -208,6 +246,21 @@ export const handleCheckoutComplete = createWebhookHandler(async (event) => {
     await handleTopUp(
       session.metadata.userId,
       parseInt(session.metadata.tokens)
+    );
+  }
+  // pay once top up (minutes)
+  else if (
+    session.metadata?.plan ===
+      config.products.PayOnceTopUpMinutes.metadata.plan ||
+    session.metadata?.type === 'top_up_minutes'
+  ) {
+    console.log('handling minutes top-up', session.metadata);
+    if (!session.metadata.minutes) {
+      throw new Error('Missing required minutes in metadata');
+    }
+    await handleTopUpMinutes(
+      session.metadata.userId,
+      parseInt(session.metadata.minutes)
     );
   }
   // fallback: any other pay-once product

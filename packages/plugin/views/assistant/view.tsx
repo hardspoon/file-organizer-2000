@@ -196,7 +196,7 @@ function AssistantContent({
     if (!usageData) return false;
 
     const isFreeTier =
-      usageData.currentPlan === "Legacy Plan" ||
+      usageData.currentPlan === "Free Plan" ||
       usageData.currentPlan === "Free" ||
       usageData.maxTokenUsage === 100000;
 
