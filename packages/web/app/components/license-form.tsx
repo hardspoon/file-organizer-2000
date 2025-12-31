@@ -123,7 +123,7 @@ const LicenseForm = () => {
                 </CardHeader>
                 <CardContent className="pt-0 pb-6">
                   <div className="flex flex-col space-y-4">
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 px-2">
                       <Input
                         name="licenseKey"
                         value={licenseKey}
@@ -150,7 +150,7 @@ const LicenseForm = () => {
                     </p>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-center pt-4 pb-6">
+                <CardFooter className="flex justify-center pt-4 pb-6 px-2">
                   <Button
                     onClick={handleCreateKey}
                     disabled={loading}
