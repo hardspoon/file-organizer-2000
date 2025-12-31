@@ -14,13 +14,16 @@ export function TopUpMinutes({
   const handleTopUp = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${plugin.getServerUrl()}/api/top-up-minutes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${plugin.settings.API_KEY}`,
-        },
-      });
+      const response = await fetch(
+        `${plugin.getServerUrl()}/api/top-up-minutes`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${plugin.settings.API_KEY}`,
+          },
+        }
+      );
 
       const data = await response.json();
       if (data.url) {
@@ -36,10 +39,7 @@ export function TopUpMinutes({
 
   return (
     <Button onClick={handleTopUp} disabled={loading} className="w-full">
-      {loading
-        ? "Processing..."
-        : "Top Up 300 Minutes ($10)"}
+      {loading ? "Processing..." : "Top Up 300 Minutes ($10)"}
     </Button>
   );
 }
-

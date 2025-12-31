@@ -239,7 +239,8 @@ async function handleApiKeyAuth(
       }
     }
 
-    // Handle v2 response format (wrapped in data) or v1 format (direct result)
+    // Handle v2 response format (wrapped in data)
+    // Note: Keeping backward compatibility check for response.result in case of edge cases
     const result =
       response && ('data' in response ? response.data : response.result);
     const error = response?.error;
@@ -571,7 +572,8 @@ export async function handleAuthorization(req: NextRequest) {
     throw new AuthorizationError(`Unauthorized: ${result?.code}`, 401);
   }
 
-  // Extract userId from v2 format (identity.externalId) or v1 format (ownerId)
+  // Extract userId from v2 format (identity.externalId or identity.id)
+  // Note: ownerId fallback kept for backward compatibility with older keys
   const userId =
     result?.identity?.externalId || result?.identity?.id || result?.ownerId;
   if (!userId) {

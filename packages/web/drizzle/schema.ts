@@ -40,8 +40,12 @@ export const UserUsageTable = pgTable(
     billingCycle: text('billingCycle').notNull(),
     tokenUsage: integer('tokenUsage').notNull().default(0),
     maxTokenUsage: integer('maxTokenUsage').notNull().default(0),
-    audioTranscriptionMinutes: integer('audioTranscriptionMinutes').notNull().default(0),
-    maxAudioTranscriptionMinutes: integer('maxAudioTranscriptionMinutes').notNull().default(0),
+    audioTranscriptionMinutes: integer('audioTranscriptionMinutes')
+      .notNull()
+      .default(0),
+    maxAudioTranscriptionMinutes: integer('maxAudioTranscriptionMinutes')
+      .notNull()
+      .default(0),
     subscriptionStatus: text('subscriptionStatus')
       .notNull()
       .default('inactive'),
@@ -115,20 +119,23 @@ export type VercelToken = typeof vercelTokens.$inferSelect;
 export type NewVercelToken = typeof vercelTokens.$inferInsert;
 
 export const createEmptyUserUsage = async (userId: string) => {
-  await db.insert(UserUsageTable).values({
-    userId,
-    billingCycle: 'free',
-    tokenUsage: 0,
-    maxTokenUsage: DEFAULT_LEGACY_PLAN_TOKENS,
-    audioTranscriptionMinutes: 0,
-    maxAudioTranscriptionMinutes: 0, // Free/legacy tier gets 0 minutes
-    subscriptionStatus: 'active', // Legacy plan is considered active
-    paymentStatus: 'free', // Legacy plan doesn't require payment
-    tier: 'free',
-    currentPlan: 'Free Plan',
-  }).onConflictDoNothing({
-    target: [UserUsageTable.userId],
-  });
+  await db
+    .insert(UserUsageTable)
+    .values({
+      userId,
+      billingCycle: 'free',
+      tokenUsage: 0,
+      maxTokenUsage: DEFAULT_LEGACY_PLAN_TOKENS,
+      audioTranscriptionMinutes: 0,
+      maxAudioTranscriptionMinutes: 0, // Free/legacy tier gets 0 minutes
+      subscriptionStatus: 'active', // Legacy plan is considered active
+      paymentStatus: 'free', // Legacy plan doesn't require payment
+      tier: 'free',
+      currentPlan: 'Free Plan',
+    })
+    .onConflictDoNothing({
+      target: [UserUsageTable.userId],
+    });
 };
 
 // Initialize the tier config table with default values if none exist

@@ -199,48 +199,35 @@ export async function POST(request: NextRequest) {
       } else {
         console.log('SDK methods not found, trying direct API call...');
         // Fallback: Direct HTTP API call to Unkey v2
-        // Try different endpoint formats
-        const verifyUrls = [
-          'https://api.unkey.com/v2/keys/verify-api-key',
-          'https://api.unkey.com/v1/keys/verify',
-          'https://api.unkey.com/v1/key/verify',
-        ];
+        // Unkey v2 uses /v2/keys/verify-api-key endpoint
+        const verifyUrl = 'https://api.unkey.com/v2/keys/verify-api-key';
 
-        let lastError: Error | null = null;
-        for (const verifyUrl of verifyUrls) {
-          try {
-            console.log(`Trying API endpoint: ${verifyUrl}`);
-            const apiResponse = await fetch(verifyUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ key: token }),
+        try {
+          console.log(`Trying API endpoint: ${verifyUrl}`);
+          const apiResponse = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ key: token }),
+          });
+
+          if (apiResponse.ok) {
+            response = await apiResponse.json();
+            console.log('Direct API call succeeded');
+          } else {
+            const errorText = await apiResponse.text();
+            console.log(`API endpoint ${verifyUrl} failed:`, {
+              status: apiResponse.status,
+              body: errorText,
             });
-
-            if (apiResponse.ok) {
-              response = await apiResponse.json();
-              console.log('Direct API call succeeded');
-              break;
-            } else {
-              const errorText = await apiResponse.text();
-              console.log(`API endpoint ${verifyUrl} failed:`, {
-                status: apiResponse.status,
-                body: errorText,
-              });
-              lastError = new Error(`Unkey API error: ${apiResponse.status}`);
-            }
-          } catch (fetchError) {
-            console.error(`Error calling ${verifyUrl}:`, fetchError);
-            lastError =
-              fetchError instanceof Error
-                ? fetchError
-                : new Error('Unknown fetch error');
+            throw new Error(`Unkey API error: ${apiResponse.status}`);
           }
-        }
-
-        if (!response && lastError) {
-          throw lastError;
+        } catch (fetchError) {
+          console.error(`Error calling ${verifyUrl}:`, fetchError);
+          throw fetchError instanceof Error
+            ? fetchError
+            : new Error('Unknown fetch error');
         }
       }
     } catch (err) {
@@ -248,7 +235,8 @@ export async function POST(request: NextRequest) {
       console.error('Unkey verification error:', error);
     }
 
-    // Handle v2 response format (wrapped in data) or v1 format (direct result)
+    // Handle v2 response format (wrapped in data)
+    // Note: Keeping backward compatibility check for response.result in case of edge cases
     // The SDK error object has data$ field with the actual response
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: any = null;
@@ -315,7 +303,8 @@ export async function POST(request: NextRequest) {
     // Key is valid - return success
     // Note: We don't check subscription status here because this endpoint
     // is only for validating that the key format/structure is correct
-    // Extract userId from v2 format (identity.externalId) or v1 format (ownerId)
+    // Extract userId from v2 format (identity.externalId or identity.id)
+    // Note: ownerId fallback kept for backward compatibility with older keys
     const userId =
       result?.identity?.externalId || result?.identity?.id || result?.ownerId;
     return NextResponse.json(

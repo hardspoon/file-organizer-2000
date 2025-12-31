@@ -5,7 +5,10 @@ import { promises as fsPromises } from 'node:fs';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { Unkey } from '@unkey/api';
-import { checkAudioTranscriptionQuota, incrementAudioTranscriptionUsage } from '@/drizzle/schema';
+import {
+  checkAudioTranscriptionQuota,
+  incrementAudioTranscriptionUsage,
+} from '@/drizzle/schema';
 
 export const maxDuration = 800; // Maximum allowed for Vercel Pro plan (13.3 minutes) for longer audio/video files
 
@@ -101,8 +104,8 @@ function formatTranscript(text: string): string {
   // Trim each paragraph
   formatted = formatted
     .split('\n\n')
-    .map(para => para.trim())
-    .filter(para => para.length > 0)
+    .map((para) => para.trim())
+    .filter((para) => para.length > 0)
     .join('\n\n');
 
   return formatted;
@@ -150,7 +153,8 @@ export async function POST(request: Request) {
       response = await (unkey as any).keys.verify(verifyParams);
     }
 
-    // Handle v2 response format (wrapped in data) or v1 format (direct result)
+    // Handle v2 response format (wrapped in data)
+    // Note: Keeping backward compatibility check for response.result in case of edge cases
     const result =
       response && ('data' in response ? response.data : response.result);
     const error = response?.error;
