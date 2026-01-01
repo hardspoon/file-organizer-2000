@@ -36,22 +36,55 @@ export const handleInvoicePaid = createWebhookHandler(
     const invoice = event.data.object as Stripe.Invoice;
     console.log('invoice paid', invoice);
 
-    // Try to get userId from subscription_details.metadata first (most reliable)
-    // Fallback to invoice.metadata if subscription_details is not available
+    // Try multiple sources for userId metadata:
+    // 1. invoice.parent.subscription_details.metadata (newer Stripe API structure)
+    // 2. Fetch subscription directly if we have subscription ID
+    // 3. invoice.metadata (fallback)
     let userId: string | undefined;
     let metadata: Record<string, string> | undefined;
 
-    if (invoice.subscription_details?.metadata) {
-      metadata = invoice.subscription_details.metadata;
+    // Check parent.subscription_details.metadata first (where it actually is)
+    // Note: parent is not in Stripe.Invoice type but exists in webhook payloads
+    const invoiceWithParent = invoice as Stripe.Invoice & {
+      parent?: {
+        subscription_details?: {
+          metadata?: Record<string, string>;
+        };
+      };
+    };
+    if (invoiceWithParent.parent?.subscription_details?.metadata) {
+      metadata = invoiceWithParent.parent.subscription_details.metadata;
       userId = metadata.userId;
-    } else if (invoice.metadata) {
+    }
+
+    // If not found, try fetching the subscription directly
+    if (!userId && invoice.subscription) {
+      try {
+        const subscriptionId =
+          typeof invoice.subscription === 'string'
+            ? invoice.subscription
+            : invoice.subscription.id;
+        const subscription = await stripe.subscriptions.retrieve(
+          subscriptionId
+        );
+        if (subscription.metadata?.userId) {
+          metadata = subscription.metadata;
+          userId = subscription.metadata.userId;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch subscription metadata:', error);
+      }
+    }
+
+    // Fallback to invoice.metadata
+    if (!userId && invoice.metadata) {
       metadata = invoice.metadata;
       userId = metadata.userId;
     }
 
     if (!userId) {
       console.warn(
-        'No userId found in invoice metadata or subscription_details.metadata'
+        'No userId found in invoice metadata, parent.subscription_details.metadata, or subscription metadata'
       );
       return {
         success: true,
@@ -102,7 +135,22 @@ export const handleInvoicePaid = createWebhookHandler(
         },
       });
 
-    await resetUserUsageAndSetLastPayment(userId);
+    // Only reset usage for monthly subscriptions
+    // Yearly subscriptions get reset by the monthly cron job (they need monthly resets)
+    // Lifetime subscriptions don't need resets
+    const billingCycle = metadata.type as 'monthly' | 'yearly' | 'lifetime';
+    if (billingCycle === 'monthly') {
+      await resetUserUsageAndSetLastPayment(userId);
+    } else {
+      // For yearly/lifetime, just update lastPayment without resetting usage
+      // Yearly subscriptions will be reset by the monthly cron on the 1st
+      await db
+        .update(UserUsageTable)
+        .set({
+          lastPayment: new Date(),
+        })
+        .where(eq(UserUsageTable.userId, userId));
+    }
 
     await trackLoopsEvent({
       email: invoice.customer_email || '',
