@@ -17,6 +17,12 @@ export async function trackLoopsEvent({
   eventName,
   data = {}
 }: LoopsEvent) {
+  // Check for missing API key
+  if (!process.env.LOOPS_API_KEY) {
+    console.error('LOOPS_API_KEY is not set');
+    return;
+  }
+
   try {
     const response = await fetch('https://app.loops.so/api/v1/events/send', {
       method: 'POST',
@@ -75,8 +81,8 @@ export async function trackLoopsEvent({
           console.log('Loops tracking succeeded with email only');
         }
       } else {
-        // For other errors, log as warning since Loops tracking is non-critical
-        console.warn('Loops tracking failed:', errorText);
+        // For other errors, log as error since Loops tracking failed
+        console.error('Loops tracking failed:', errorText);
       }
     }
   } catch (error) {

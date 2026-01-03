@@ -3,7 +3,6 @@ import { Unkey } from '@unkey/api';
 import { NextRequest } from 'next/server';
 import {
   checkTokenUsage,
-  checkUserSubscriptionStatus,
   createEmptyUserUsage,
   UserUsageTable,
   db,
@@ -13,31 +12,6 @@ import {
 import PostHogClient from './posthog';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-
-/**
- * @deprecated This function is being deprecated in favor of a new authorization method.
- * Please use the new handleAuthorizationV2 function instead.
- */
-async function handleLogging(
-  req: NextRequest,
-  userId: string,
-  isCustomer: boolean
-) {
-  const authClient = await clerkClient();
-  const user = await authClient.users.getUser(userId);
-  const client = PostHogClient();
-  if (client) {
-    client.capture({
-      distinctId: userId,
-      event: 'call-api',
-      properties: {
-        endpoint: req.nextUrl.pathname.replace('/api/', ''),
-        isCustomer,
-        email: user?.emailAddresses[0]?.emailAddress,
-      },
-    });
-  }
-}
 
 async function handleLoggingV2(req: NextRequest, userId: string) {
   // Skip logging if Clerk is not configured
@@ -512,102 +486,6 @@ export async function handleAuthorizationV2(req: NextRequest) {
   }
 }
 
-/**
- * @deprecated This function is being deprecated in favor of a new authorization method.
- * Please use the new handleAuthorizationV2 function instead.
- */
-export async function handleAuthorization(req: NextRequest) {
-  // this is to allow people to self host it easily without
-  // setting up clerk
-  if (process.env.ENABLE_USER_MANAGEMENT !== 'true') {
-    return { userId: 'user', isCustomer: true };
-  }
-
-  const header = req.headers.get('authorization');
-  const { url, method } = req;
-  console.log({ url, method });
-
-  if (!header) {
-    throw new AuthorizationError('No Authorization header', 401);
-  }
-
-  const token = header.replace('Bearer ', '');
-
-  // Unkey v2: Use Unkey instance for verification
-  const unkey = new Unkey({
-    rootKey: process.env.UNKEY_ROOT_KEY || '',
-  });
-
-  // Try verifyKey method (v2 API) - takes object with 'key' property
-  // Include apiId if available (keys are scoped to an API)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let response: any = null;
-  const apiId = process.env.UNKEY_API_ID;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const verifyParams: any = { key: token };
-  if (apiId) {
-    verifyParams.apiId = apiId;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((unkey as any).keys?.verifyKey) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response = await (unkey as any).keys.verifyKey(verifyParams);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } else if ((unkey as any).verifyKey) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response = await (unkey as any).verifyKey(verifyParams);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } else if ((unkey as any).keys?.verify) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response = await (unkey as any).keys.verify(verifyParams);
-  }
-
-  // Handle v2 response format (wrapped in data) or v1 format (direct result)
-  const result =
-    response && ('data' in response ? response.data : response.result);
-
-  if (!result || !result.valid) {
-    console.error(result);
-    throw new AuthorizationError(`Unauthorized: ${result?.code}`, 401);
-  }
-
-  // Extract userId from v2 format (identity.externalId or identity.id)
-  // Note: ownerId fallback kept for backward compatibility with older keys
-  const userId =
-    result?.identity?.externalId || result?.identity?.id || result?.ownerId;
-  if (!userId) {
-    throw new AuthorizationError(
-      'No user ID found in verification result',
-      401
-    );
-  }
-
-  // Check subscription status
-  const isActive = await checkUserSubscriptionStatus(userId);
-  if (!isActive) {
-    throw new AuthorizationError('Subscription canceled or inactive', 403);
-  }
-
-  // Check token usage
-  const { remaining, usageError } = await checkTokenUsage(userId);
-  console.log('remaining', remaining);
-
-  if (usageError) {
-    throw new AuthorizationError('Error checking token usage', 500);
-  }
-
-  if (remaining <= 0) {
-    throw new AuthorizationError(
-      'Credits limit exceeded. Top up your credits in settings.',
-      429
-    );
-  }
-
-  await handleLogging(req, userId, false);
-
-  return { userId };
-}
 async function ensureUserExists(userId: string): Promise<void> {
   try {
     // Make sure tier configuration exists first

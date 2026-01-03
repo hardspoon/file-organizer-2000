@@ -1,57 +1,74 @@
 import { NextRequest } from 'next/server';
-import {
-  handleAuthorizationV2,
-  handleAuthorization,
-} from './handleAuthorization';
+import { handleAuthorizationV2 } from './handleAuthorization';
 
 // Mock @unkey/api - v2 uses Unkey class with keys.verifyKey method
-const mockVerifyKey = jest.fn();
+// Create mock inside factory to avoid hoisting issues
+jest.mock('@unkey/api', () => {
+  const mockVerifyKey = jest.fn();
+  // Store reference so we can access it in tests
+  (global as any).__mockVerifyKey = mockVerifyKey;
 
-jest.mock('@unkey/api', () => ({
-  Unkey: jest.fn().mockImplementation(() => ({
-    keys: {
-      verifyKey: mockVerifyKey,
+  return {
+    Unkey: jest.fn().mockImplementation(() => {
+      // Always return a fresh instance that references the current mock
+      return {
+        keys: {
+          verifyKey: (global as any).__mockVerifyKey,
+        },
+      };
+    }),
+  };
+});
+
+// Get reference to Unkey mock
+const getMockVerifyKey = () => (global as any).__mockVerifyKey as jest.Mock;
+
+// Mock Clerk - create mocks inside factory to avoid hoisting issues
+jest.mock('@clerk/nextjs/server', () => {
+  const mockAuthFn = jest.fn();
+  const mockClerkClientFn = jest.fn();
+
+  // Store references so we can access them in tests
+  (global as any).__mockAuth = mockAuthFn;
+  (global as any).__mockClerkClient = mockClerkClientFn;
+
+  return {
+    clerkClient: mockClerkClientFn,
+    auth: mockAuthFn,
+  };
+});
+
+// Mock database and other dependencies - create mocks inside factory to avoid hoisting issues
+jest.mock('../drizzle/schema', () => {
+  const mockDbSelect = jest.fn().mockReturnThis();
+  const mockDbFrom = jest.fn().mockReturnThis();
+  const mockDbWhere = jest.fn().mockReturnThis();
+  const mockDbLimit = jest.fn();
+
+  // Store references so we can access them in tests
+  (global as any).__mockDbSelect = mockDbSelect;
+  (global as any).__mockDbFrom = mockDbFrom;
+  (global as any).__mockDbWhere = mockDbWhere;
+  (global as any).__mockDbLimit = mockDbLimit;
+
+  return {
+    checkTokenUsage: jest
+      .fn()
+      .mockResolvedValue({ remaining: 1000, usageError: null }),
+    checkUserSubscriptionStatus: jest.fn().mockResolvedValue(true),
+    createEmptyUserUsage: jest.fn().mockResolvedValue(undefined),
+    UserUsageTable: {},
+    db: {
+      select: mockDbSelect,
+      from: mockDbFrom,
+      where: mockDbWhere,
+      limit: mockDbLimit,
     },
-  })),
-}));
-
-// Mock Clerk
-jest.mock('@clerk/nextjs/server', () => ({
-  clerkClient: jest.fn().mockResolvedValue({
-    users: {
-      getUser: jest.fn().mockResolvedValue({
-        emailAddresses: [{ emailAddress: 'test@example.com' }],
-      }),
-    },
-  }),
-  auth: jest.fn().mockResolvedValue({ userId: 'clerk-user-id' }),
-}));
-
-// Mock database and other dependencies
-jest.mock('../drizzle/schema', () => ({
-  checkTokenUsage: jest
-    .fn()
-    .mockResolvedValue({ remaining: 1000, usageError: null }),
-  checkUserSubscriptionStatus: jest.fn().mockResolvedValue(true),
-  createEmptyUserUsage: jest.fn().mockResolvedValue(undefined),
-  UserUsageTable: {},
-  db: {
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockResolvedValue([
-      {
-        userId: 'test-user-id',
-        tokenUsage: 100,
-        maxTokenUsage: 10000,
-        subscriptionStatus: 'active',
-      },
-    ]),
-  },
-  initializeTierConfig: jest.fn().mockResolvedValue(undefined),
-  isSubscriptionActive: jest.fn().mockResolvedValue(true),
-  eq: jest.fn(),
-}));
+    initializeTierConfig: jest.fn().mockResolvedValue(undefined),
+    isSubscriptionActive: jest.fn().mockResolvedValue(true),
+    eq: jest.fn(),
+  };
+});
 
 // Mock PostHog
 jest.mock('./posthog', () => ({
@@ -61,22 +78,72 @@ jest.mock('./posthog', () => ({
   }),
 }));
 
+// Get references to mocks after they're created
+const getMockAuth = () => (global as any).__mockAuth as jest.Mock;
+const getMockClerkClient = () => (global as any).__mockClerkClient as jest.Mock;
+const getMockDbSelect = () => (global as any).__mockDbSelect as jest.Mock;
+const getMockDbFrom = () => (global as any).__mockDbFrom as jest.Mock;
+const getMockDbWhere = () => (global as any).__mockDbWhere as jest.Mock;
+const getMockDbLimit = () => (global as any).__mockDbLimit as jest.Mock;
+
 describe('handleAuthorization - Unkey API v2 Migration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Ensure Unkey mock has a default implementation that can be overridden
+    // Each test will override this with its own response
+    getMockVerifyKey().mockReset();
+    getMockVerifyKey().mockResolvedValue({
+      data: { valid: false },
+      error: { code: 'NOT_FOUND', message: 'Default - should be overridden' },
+    });
+
     process.env.ENABLE_USER_MANAGEMENT = 'true';
+    process.env.UNKEY_ROOT_KEY = 'test-root-key'; // Required for Unkey instance creation
     // Clear UNKEY_API_ID so tests can control whether apiId is included
     delete process.env.UNKEY_API_ID;
+
+    // Reset Clerk mocks
+    const mockAuthFn = getMockAuth();
+    const mockClerkClientFn = getMockClerkClient();
+
+    mockAuthFn.mockReset();
+    mockAuthFn.mockResolvedValue({ userId: null }); // Default to no Clerk auth
+    mockClerkClientFn.mockReset();
+    mockClerkClientFn.mockResolvedValue({
+      users: {
+        getUser: jest.fn().mockResolvedValue({
+          emailAddresses: [{ emailAddress: 'test@example.com' }],
+        }),
+      },
+    });
+
+    // Reset database mocks - ensure chain works correctly
+    // The chain is: db.select().from().where().limit()
+    // Each method should return an object that has the next method
+    getMockDbSelect().mockReset().mockReturnThis();
+    getMockDbFrom().mockReset().mockReturnThis();
+    getMockDbWhere().mockReset().mockReturnThis();
+    getMockDbLimit().mockReset();
+    getMockDbLimit().mockResolvedValue([]); // Default to no existing user
   });
 
   afterEach(() => {
     delete process.env.ENABLE_USER_MANAGEMENT;
     delete process.env.UNKEY_API_ID;
+    delete process.env.UNKEY_ROOT_KEY;
   });
 
   describe('v2 Response Format (data wrapper)', () => {
     it('should handle verifyKey with v2 response format (data wrapper with meta)', async () => {
-      mockVerifyKey.mockResolvedValueOnce({
+      const expectedUserId = 'test-user-id';
+
+      // Reset ALL mocks for this test - exactly like test 2 which works
+      getMockVerifyKey().mockReset();
+      getMockDbLimit().mockReset();
+
+      // Set up Unkey mock response - use mockResolvedValue (not Once) to replace the default
+      getMockVerifyKey().mockResolvedValue({
         meta: {
           requestId: 'req_abc123',
         },
@@ -85,36 +152,71 @@ describe('handleAuthorization - Unkey API v2 Migration', () => {
           keyId: 'key_123',
           identity: {
             id: 'id_123',
-            externalId: 'test-user-id',
+            externalId: expectedUserId,
           },
         },
         error: null,
       });
 
+      // Mock database to return user with matching userId
+      // Database is queried in ensureUserExists and potentially in validateTokenUsage
+      const userRecord = {
+        userId: expectedUserId,
+        tokenUsage: 100,
+        maxTokenUsage: 10000,
+        subscriptionStatus: 'active',
+      };
+      getMockDbLimit()
+        .mockResolvedValueOnce([userRecord]) // For ensureUserExists
+        .mockResolvedValueOnce([userRecord]); // For validateTokenUsage if needed
+
       const req = new NextRequest('http://localhost:3000/api/test', {
         method: 'GET',
         headers: {
-          authorization: 'Bearer valid-key',
+          authorization: 'Bearer valid-key-123', // Must be >= 10 chars to pass length check
         },
       });
 
       const result = await handleAuthorizationV2(req);
 
-      expect(result).toEqual({ userId: 'test-user-id' });
+      // Verify Unkey mock was called
+      expect(getMockVerifyKey()).toHaveBeenCalled();
       // When UNKEY_API_ID is not set, only key should be passed
-      expect(mockVerifyKey).toHaveBeenCalledWith({ key: 'valid-key' });
+      expect(getMockVerifyKey()).toHaveBeenCalledWith({ key: 'valid-key-123' });
+      // Verify we didn't fall through to Clerk auth
+      expect(getMockAuth()).not.toHaveBeenCalled();
+
+      expect(result).toEqual({ userId: expectedUserId });
     });
 
     it('should handle verifyKey with v1 response format (backward compatibility)', async () => {
+      const expectedUserId = 'test-user-id-v1';
+
+      // Reset all mocks for this test to prevent leakage from previous test
+      getMockVerifyKey().mockReset();
+      getMockDbLimit().mockReset();
+
       // Simulate v1 format (direct result, no data wrapper, with ownerId)
-      mockVerifyKey.mockResolvedValueOnce({
+      getMockVerifyKey().mockResolvedValue({
         result: {
           valid: true,
-          ownerId: 'test-user-id-v1',
+          ownerId: expectedUserId,
           keyId: 'key_456',
         },
         error: null,
       } as any);
+
+      // Mock database to return user with matching userId
+      // Database is queried in ensureUserExists and potentially in validateTokenUsage
+      const userRecord = {
+        userId: expectedUserId,
+        tokenUsage: 100,
+        maxTokenUsage: 10000,
+        subscriptionStatus: 'active',
+      };
+      getMockDbLimit()
+        .mockResolvedValueOnce([userRecord]) // For ensureUserExists
+        .mockResolvedValueOnce([userRecord]); // For validateTokenUsage if needed
 
       const req = new NextRequest('http://localhost:3000/api/test', {
         method: 'GET',
@@ -125,12 +227,17 @@ describe('handleAuthorization - Unkey API v2 Migration', () => {
 
       const result = await handleAuthorizationV2(req);
 
-      expect(result).toEqual({ userId: 'test-user-id-v1' });
-      expect(mockVerifyKey).toHaveBeenCalledWith({ key: 'valid-key-v1' });
+      expect(result).toEqual({ userId: expectedUserId });
+      expect(getMockVerifyKey()).toHaveBeenCalledWith({ key: 'valid-key-v1' });
     });
 
     it('should handle invalid key with v2 error format', async () => {
-      mockVerifyKey.mockResolvedValueOnce({
+      // Reset all mocks for this test to ensure clean state
+      getMockVerifyKey().mockReset();
+      getMockDbLimit().mockReset();
+      getMockAuth().mockReset();
+
+      getMockVerifyKey().mockResolvedValueOnce({
         meta: {
           requestId: 'req_invalid123',
         },
@@ -144,9 +251,11 @@ describe('handleAuthorization - Unkey API v2 Migration', () => {
         },
       });
 
-      // Mock Clerk auth to also fail so we get the Unauthorized error
-      const { auth } = require('@clerk/nextjs/server');
-      auth.mockResolvedValueOnce({ userId: null });
+      // Ensure Clerk auth also fails
+      getMockAuth().mockResolvedValue({ userId: null });
+
+      // Reset database mock to ensure no user is found (shouldn't matter since Unkey fails first)
+      getMockDbLimit().mockResolvedValue([]);
 
       const req = new NextRequest('http://localhost:3000/api/test', {
         method: 'GET',
@@ -157,44 +266,7 @@ describe('handleAuthorization - Unkey API v2 Migration', () => {
 
       await expect(handleAuthorizationV2(req)).rejects.toThrow('Unauthorized');
       // verifyKey may be called with apiId if UNKEY_API_ID is set, so just check it was called
-      expect(mockVerifyKey).toHaveBeenCalled();
-    });
-  });
-
-  describe('Legacy handleAuthorization (deprecated)', () => {
-    it('should handle v2 response format', async () => {
-      mockVerifyKey.mockResolvedValueOnce({
-        meta: {
-          requestId: 'req_legacy123',
-        },
-        data: {
-          valid: true,
-          keyId: 'key_123',
-          identity: {
-            id: 'id_123',
-            externalId: 'test-user-id',
-          },
-        },
-        error: null,
-      });
-
-      const req = new NextRequest('http://localhost:3000/api/test', {
-        method: 'GET',
-        headers: {
-          authorization: 'Bearer valid-key',
-        },
-      });
-
-      // Set up environment for legacy function
-      process.env.UNKEY_ROOT_KEY = 'test-root-key';
-      // Don't set UNKEY_API_ID so apiId won't be included
-
-      const result = await handleAuthorization(req);
-
-      // handleAuthorization extracts userId from identity.externalId or ownerId
-      expect(result).toEqual({ userId: 'test-user-id' });
-      // The legacy function calls verifyKey - check it was called (may include apiId if env var is set)
-      expect(mockVerifyKey).toHaveBeenCalled();
+      expect(getMockVerifyKey()).toHaveBeenCalled();
     });
   });
 });

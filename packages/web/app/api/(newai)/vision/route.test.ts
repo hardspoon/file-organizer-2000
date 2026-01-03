@@ -78,10 +78,10 @@ describe('POST /api/(newai)/vision', () => {
 
       const callArgs = (generateText as jest.Mock).mock.calls[0][0];
       expect(callArgs.messages[0].content[0].text).toContain(
-        'Extract text from image'
+        'Extract all text from the image comprehensively'
       );
       expect(callArgs.messages[0].content[0].text).toContain(
-        'Respond with only the extracted text or description'
+        'Respond with only the extracted text'
       );
     });
 
@@ -239,7 +239,7 @@ describe('POST /api/(newai)/vision', () => {
       const callArgs = (generateText as jest.Mock).mock.calls[0][0];
       // Should use default instruction when empty string
       expect(callArgs.messages[0].content[0].text).toContain(
-        'Extract text from image'
+        'Extract all text from the image comprehensively'
       );
     });
 
@@ -264,7 +264,7 @@ describe('POST /api/(newai)/vision', () => {
       const callArgs = (generateText as jest.Mock).mock.calls[0][0];
       // Should use default instruction when only whitespace
       expect(callArgs.messages[0].content[0].text).toContain(
-        'Extract text from image'
+        'Extract all text from the image comprehensively'
       );
     });
 

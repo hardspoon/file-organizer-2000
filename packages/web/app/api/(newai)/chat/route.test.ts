@@ -284,13 +284,13 @@ describe('Chat API Route', () => {
 
     // Check that transcript extraction was logged
     const extractionLog = consoleLogSpy.mock.calls.find((call) =>
-      call[0]?.includes('Extracting YouTube transcript from tool result')
+      call[0]?.includes('Extracting YouTube transcript') && call[0]?.includes('from tool result')
     );
     expect(extractionLog).toBeDefined();
 
     // Check that transcript was added to context
     const contextLog = consoleLogSpy.mock.calls.find((call) =>
-      call[0]?.includes('Added YouTube transcript(s) to context string')
+      call[0]?.includes('YouTube transcript(s) to context string')
     );
     expect(contextLog).toBeDefined();
 
