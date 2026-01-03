@@ -68,7 +68,7 @@ export class MeetingMetadataManager {
 
   async updateMetadata(recording: RecordingMetadata): Promise<void> {
     const index = this.metadata.recordings.findIndex(
-      (r) => r.filePath === recording.filePath
+      r => r.filePath === recording.filePath
     );
     if (index >= 0) {
       this.metadata.recordings[index] = recording;
@@ -80,7 +80,9 @@ export class MeetingMetadataManager {
 
   async discoverRecordings(): Promise<RecordingMetadata[]> {
     const discovered: RecordingMetadata[] = [];
-    const existingPaths = new Set(this.metadata.recordings.map((r) => r.filePath));
+    const existingPaths = new Set(
+      this.metadata.recordings.map(r => r.filePath)
+    );
 
     try {
       // Get all files in vault
@@ -134,9 +136,8 @@ export class MeetingMetadataManager {
 
   async removeRecording(filePath: string): Promise<void> {
     this.metadata.recordings = this.metadata.recordings.filter(
-      (r) => r.filePath !== filePath
+      r => r.filePath !== filePath
     );
     await this.saveMetadata();
   }
 }
-

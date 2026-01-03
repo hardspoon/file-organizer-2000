@@ -76,20 +76,24 @@ export function FaqSection() {
             If you get enough value out of the plugin, please consider supporting the product. This is an open source initiative we are 100% self-funded. Any contribution helps us continue to maintain and improve the plugin. ❤️"
           />
           <FaqItem
+            question="Where is my data stored?"
+            answer="In the current cloud version, all data (notes, files, chat messages, transcriptions) is stored and processed outside the European Union, primarily in the United States."
+          />
+          <FaqItem
+            question="What data is sent to OpenAI?"
+            answer="When using AI features, your chat messages, note content, audio files for transcription, and vault context are transmitted to OpenAI (United States). This data is subject to OpenAI's privacy policies and is not end-to-end encrypted."
+          />
+          <FaqItem
+            question="Is my data encrypted?"
+            answer="Yes. Data is encrypted in transit (HTTPS/TLS) and at rest by our infrastructure providers. End-to-end encryption is not implemented as server-side access is required for AI features."
+          />
+          <FaqItem
             question="Privacy Policy & Contact"
-            answer={`Privacy is super important to us. Here's a quick rundown of how we handle your information:
-
-<strong>Your Files</strong>
-  Your files are processed through OpenAI's GPT-4.1-mini when using the cloud-hosted version.
-  Unlike with a Chat GPT subscription, your prompts are not saved or stored anywhere other than your computer.
-
-<strong>Your Data</strong>
-  We use Clerk for authentication, so your login details are safe and secure. Stripe handles all payments, ensuring your payment information is protected.
+            answer={`Privacy is important to us. For detailed privacy information, see the questions above.
 
 <strong>Contact Us</strong>
-  Have questions or concerns about your privacy? Reach out to us at:
-  • Email: <a href="mailto:notecompanionteam@gmail.com" class="text-accent underline hover:no-underline">notecompanionteam@gmail.com</a>
-  • Discord: <a href="https://discord.com/invite/udQnCRFyus" class="text-accent underline hover:no-underline">Join our Discord server</a>`}
+• Email: <a href="mailto:notecompanionteam@gmail.com" class="text-accent underline hover:no-underline">notecompanionteam@gmail.com</a>
+• Discord: <a href="https://discord.com/invite/udQnCRFyus" class="text-accent underline hover:no-underline">Join our Discord server</a>`}
           />
         </div>
       </div>
