@@ -1,0 +1,17 @@
+name: Daily Scheduled Tasks
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # Daily midnight
+  workflow_dispatch:
+
+jobs:
+  deploy-latest-server-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy latest server version
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.VERCEL_URL }}/api/cron/redeploy
+

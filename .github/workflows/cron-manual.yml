@@ -1,0 +1,40 @@
+name: Manual Cron Tasks
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_to_run:
+        description: 'Which job to run'
+        required: true
+        type: choice
+        options:
+          - reset-tokens
+          - deploy-latest-server-version
+          - both
+        default: 'both'
+
+jobs:
+  reset-tokens:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.inputs.job_to_run == 'reset-tokens' ||
+      github.event.inputs.job_to_run == 'both'
+    steps:
+      - name: Reset Tokens
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.VERCEL_URL }}/api/cron/reset-tokens
+
+  deploy-latest-server-version:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.inputs.job_to_run == 'deploy-latest-server-version' ||
+      github.event.inputs.job_to_run == 'both'
+    steps:
+      - name: Deploy latest server version
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.VERCEL_URL }}/api/cron/redeploy
+

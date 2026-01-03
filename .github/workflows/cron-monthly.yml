@@ -1,0 +1,16 @@
+name: Monthly Scheduled Tasks
+
+on:
+  schedule:
+    - cron: '0 0 1 * *' # Midnight on 1st of month
+  workflow_dispatch:
+
+jobs:
+  reset-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reset Tokens
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.VERCEL_URL }}/api/cron/reset-tokens

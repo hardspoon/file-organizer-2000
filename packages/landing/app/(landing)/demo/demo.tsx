@@ -1,7 +1,7 @@
-"use client";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "../../../components/ui/badge";
+'use client';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '../../../components/ui/badge';
 import {
   RefreshCw,
   ChevronDown,
@@ -17,23 +17,26 @@ import {
   Search,
   Monitor,
   Wallet,
-} from "lucide-react";
-import "react-circular-progressbar/dist/styles.css";
-import { BrowserWindow } from "./browser-window";
-import { motion, AnimatePresence } from "framer-motion";
+} from 'lucide-react';
+import 'react-circular-progressbar/dist/styles.css';
+import { BrowserWindow } from './browser-window';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const tabs = [
-  { id: "organizer", label: "Organizer" },
-  { id: "inbox", label: "Inbox" },
-  { id: "meetings", label: "Meetings" },
-  { id: "chat", label: "Chat" },
+  { id: 'organizer', label: 'Organizer' },
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'meetings', label: 'Meetings' },
+  { id: 'chat', label: 'Chat' },
 ] as const;
 
-type Tab = (typeof tabs)[number]["id"];
+type Tab = (typeof tabs)[number]['id'];
 
 export const Demo = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("organizer");
+  const [activeTab, setActiveTab] = useState<Tab>('organizer');
   const [isRecording, setIsRecording] = useState(false);
+  const [enhancingRecording, setEnhancingRecording] = useState<string | null>(
+    null
+  );
 
   const renderMeetingsContent = () => {
     return (
@@ -45,7 +48,7 @@ export const Demo = () => {
               <div className="flex items-center space-x-3">
                 <div
                   className={`h-3 w-3 rounded-full ${
-                    isRecording ? "bg-red-500 animate-pulse" : "bg-muted"
+                    isRecording ? 'bg-red-500 animate-pulse' : 'bg-muted'
                   }`}
                 />
                 <h3 className="text-lg font-medium">Meeting Recorder</h3>
@@ -78,51 +81,123 @@ export const Demo = () => {
                     Recording: 00:02:45
                   </span>
                 </div>
-                <Badge variant="secondary">Live Transcription Active</Badge>
               </div>
             )}
           </div>
 
           {/* Recent Recordings */}
           <div className="bg-transparent rounded-lg p-6 border border-border">
-            <h3 className="text-lg font-medium mb-4">Recent Recordings</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium">Recent Meetings</h3>
+              <Button variant="outline" size="sm">
+                <Search className="h-3 w-3 mr-1" />
+                Scan
+              </Button>
+            </div>
             <div className="space-y-4">
               <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Play className="h-4 w-4" />
-                    <span className="font-medium">
-                      Team Sync - Product Review
-                    </span>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-medium text-sm break-all">
+                        2026-01-02 Meeting 1.m4a
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        Transcribed
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Jan 2, 2026 2:30 PM</span>
+                      <span>2.4 MB</span>
+                      <span>45 min 12 sec</span>
+                    </div>
                   </div>
-                  <Badge variant="secondary">5 min ago</Badge>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Monitor className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-destructive"
+                    >
+                      <Ban className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Duration: 45:12
-                  </span>
-                  <Button variant="outline" size="sm">
-                    Enhance Notes
+                <div className="flex items-center justify-end mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setEnhancingRecording('2026-01-02 Meeting 1.m4a')
+                    }
+                    disabled={enhancingRecording === '2026-01-02 Meeting 1.m4a'}
+                  >
+                    {enhancingRecording === '2026-01-02 Meeting 1.m4a' ? (
+                      <>
+                        <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">📝</span>
+                        Enhance Note
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
 
               <div className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Play className="h-4 w-4" />
-                    <span className="font-medium">
-                      Client Meeting - Project Kickoff
-                    </span>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-medium text-sm break-all">
+                        2026-01-01 Client Meeting.m4a
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Jan 1, 2026 10:15 AM</span>
+                      <span>1.8 MB</span>
+                      <span>32 min 18 sec</span>
+                    </div>
                   </div>
-                  <Badge variant="secondary">Yesterday</Badge>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Monitor className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-destructive"
+                    >
+                      <Ban className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Duration: 32:18
-                  </span>
-                  <Button variant="outline" size="sm">
-                    Enhance Notes
+                <div className="flex items-center justify-end mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setEnhancingRecording('2026-01-01 Client Meeting.m4a')
+                    }
+                    disabled={
+                      enhancingRecording === '2026-01-01 Client Meeting.m4a'
+                    }
+                  >
+                    {enhancingRecording === '2026-01-01 Client Meeting.m4a' ? (
+                      <>
+                        <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">📝</span>
+                        Enhance Note
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -141,16 +216,22 @@ export const Demo = () => {
           <div className="bg-transparent rounded-lg p-4 border border-border">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium flex items-center">
-                <span role="img" aria-label="robot" className="mr-2">🤖</span>
+                <span role="img" aria-label="robot" className="mr-2">
+                  🤖
+                </span>
                 AI Templates
               </h3>
-              <Button variant="outline" size="sm">Apply Template</Button>
+              <Button variant="outline" size="sm">
+                Apply Template
+              </Button>
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Current Template:</span>
                 <div className="flex items-center">
-                  <span className="text-sm text-muted-foreground">Meeting Notes Pro</span>
+                  <span className="text-sm text-muted-foreground">
+                    Meeting Notes Pro
+                  </span>
                   <ChevronDown className="h-4 w-4 ml-1" />
                 </div>
               </div>
@@ -170,18 +251,28 @@ export const Demo = () => {
           <div className="bg-transparent rounded-lg p-4 border border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <span role="img" aria-label="tags" className="mr-2">🏷️</span>
+                <span role="img" aria-label="tags" className="mr-2">
+                  🏷️
+                </span>
                 <h3 className="text-lg font-medium">AI Tags</h3>
               </div>
               <Badge variant="secondary">3 suggestions</Badge>
             </div>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-primary/5">#mobile-app</Badge>
-                <Badge variant="outline" className="bg-primary/5">#user-feedback</Badge>
-                <Badge variant="outline" className="bg-primary/5">#q4-planning</Badge>
+                <Badge variant="outline" className="bg-primary/5">
+                  #mobile-app
+                </Badge>
+                <Badge variant="outline" className="bg-primary/5">
+                  #user-feedback
+                </Badge>
+                <Badge variant="outline" className="bg-primary/5">
+                  #q4-planning
+                </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Tags suggested based on note content analysis</p>
+              <p className="text-xs text-muted-foreground">
+                Tags suggested based on note content analysis
+              </p>
             </div>
           </div>
 
@@ -189,15 +280,23 @@ export const Demo = () => {
           <div className="bg-transparent rounded-lg p-4 border border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <span role="img" aria-label="folder" className="mr-2">📁</span>
+                <span role="img" aria-label="folder" className="mr-2">
+                  📁
+                </span>
                 <h3 className="text-lg font-medium">Suggested Location</h3>
               </div>
-              <Button variant="outline" size="sm">Move</Button>
+              <Button variant="outline" size="sm">
+                Move
+              </Button>
             </div>
             <div className="space-y-3">
               <div className="bg-muted/50 rounded-lg p-3">
-                <div className="text-sm font-medium">Projects/Mobile App/Meetings</div>
-                <p className="text-xs text-muted-foreground mt-1">Based on content similarity and existing structure</p>
+                <div className="text-sm font-medium">
+                  Projects/Mobile App/Meetings
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on content similarity and existing structure
+                </p>
               </div>
             </div>
           </div>
@@ -206,7 +305,9 @@ export const Demo = () => {
           <div className="bg-transparent rounded-lg p-4 border border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <span role="img" aria-label="scissors" className="mr-2">✂️</span>
+                <span role="img" aria-label="scissors" className="mr-2">
+                  ✂️
+                </span>
                 <h3 className="text-lg font-medium">Atomic Notes</h3>
               </div>
               <Badge variant="secondary">4 chunks detected</Badge>
@@ -221,7 +322,9 @@ export const Demo = () => {
                   <li>Performance Optimization Plan</li>
                 </ul>
               </div>
-              <Button variant="outline" className="w-full">Split into Atomic Notes</Button>
+              <Button variant="outline" className="w-full">
+                Split into Atomic Notes
+              </Button>
             </div>
           </div>
         </div>
@@ -340,11 +443,15 @@ export const Demo = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span role="img" aria-label="ai" className="text-lg">🤖</span>
+              <span role="img" aria-label="ai" className="text-lg">
+                🤖
+              </span>
             </div>
             <div>
               <h2 className="text-lg font-medium">AI Assistant</h2>
-              <p className="text-sm text-muted-foreground">Processing video content...</p>
+              <p className="text-sm text-muted-foreground">
+                Processing video content...
+              </p>
             </div>
           </div>
           <Button variant="outline" size="sm">
@@ -358,13 +465,20 @@ export const Demo = () => {
           {/* User Message */}
           <div className="flex items-start justify-end space-x-2">
             <div className="max-w-[80%] text-primary-foreground rounded-lg p-3">
-              <p>Could you summarize this YouTube video and add it to my current note?</p>
+              <p>
+                Could you summarize this YouTube video and add it to my current
+                note?
+              </p>
               <div className="mt-2 text-sm bg-primary-foreground/10 rounded p-2">
-                <span className="text-blue-300">https://www.youtube.com/watch?v=2lf31DruBsg</span>
+                <span className="text-blue-300">
+                  https://www.youtube.com/watch?v=2lf31DruBsg
+                </span>
               </div>
             </div>
             <div className="h-8 w-8 rounded-full bg-background border border-border flex items-center justify-center">
-              <span role="img" aria-label="user" className="text-sm">👤</span>
+              <span role="img" aria-label="user" className="text-sm">
+                👤
+              </span>
             </div>
           </div>
 
@@ -378,7 +492,9 @@ export const Demo = () => {
           {/* AI Message */}
           <div className="flex items-start space-x-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span role="img" aria-label="ai" className="text-sm">🤖</span>
+              <span role="img" aria-label="ai" className="text-sm">
+                🤖
+              </span>
             </div>
             <div className="max-w-[80%] bg-white/90 border border-border rounded-lg p-3">
               <div className="space-y-2">
@@ -403,12 +519,16 @@ export const Demo = () => {
             <div className="text-sm text-muted-foreground">|</div>
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 bg-muted rounded-full"></div>
-              <span className="text-sm text-muted-foreground">Formatting notes</span>
+              <span className="text-sm text-muted-foreground">
+                Formatting notes
+              </span>
             </div>
             <div className="text-sm text-muted-foreground">|</div>
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 bg-muted rounded-full"></div>
-              <span className="text-sm text-muted-foreground">Adding to document</span>
+              <span className="text-sm text-muted-foreground">
+                Adding to document
+              </span>
             </div>
           </div>
         </div>
@@ -430,16 +550,31 @@ export const Demo = () => {
 
         {/* Enhancement Options */}
         <div className="grid grid-cols-3 gap-4">
-          <Button variant="outline" className="flex items-center justify-center space-x-2 bg-background/50">
-            <span role="img" aria-label="summary" className="text-lg">📝</span>
+          <Button
+            variant="outline"
+            className="flex items-center justify-center space-x-2 bg-background/50"
+          >
+            <span role="img" aria-label="summary" className="text-lg">
+              📝
+            </span>
             <span>Summary</span>
           </Button>
-          <Button variant="outline" className="flex items-center justify-center space-x-2 bg-background/50">
-            <span role="img" aria-label="key points" className="text-lg">🎯</span>
+          <Button
+            variant="outline"
+            className="flex items-center justify-center space-x-2 bg-background/50"
+          >
+            <span role="img" aria-label="key points" className="text-lg">
+              🎯
+            </span>
             <span>Key Points</span>
           </Button>
-          <Button variant="outline" className="flex items-center justify-center space-x-2 bg-background/50">
-            <span role="img" aria-label="action items" className="text-lg">✅</span>
+          <Button
+            variant="outline"
+            className="flex items-center justify-center space-x-2 bg-background/50"
+          >
+            <span role="img" aria-label="action items" className="text-lg">
+              ✅
+            </span>
             <span>Action Items</span>
           </Button>
         </div>
@@ -450,43 +585,43 @@ export const Demo = () => {
   const renderTabExplanation = (tab: Tab) => {
     const explanations = {
       organizer: {
-        emoji: "🎯",
-        title: "AI-Powered File Organization",
-        description: "Your personal file librarian that understands context",
+        emoji: '🎯',
+        title: 'AI-Powered File Organization',
+        description: 'Your personal file librarian that understands context',
         benefits: [
-          "Turn messy notes into clean, structured docs",
-          "Auto-tag everything based on content",
-          "Split long docs into atomic notes",
+          'Turn messy notes into clean, structured docs',
+          'Auto-tag everything based on content',
+          'Split long docs into atomic notes',
         ],
       },
       inbox: {
-        emoji: "📥",
-        title: "Smart Processing Queue",
-        description: "Drop files in, let AI do the heavy lifting",
+        emoji: '📥',
+        title: 'Smart Processing Queue',
+        description: 'Drop files in, let AI do the heavy lifting',
         benefits: [
-          "Never organize files manually again",
-          "Perfect for processing email exports",
-          "Handles PDFs, images, and documents",
+          'Never organize files manually again',
+          'Perfect for processing email exports',
+          'Handles PDFs, images, and documents',
         ],
       },
       meetings: {
-        emoji: "🎙️",
-        title: "Meeting Notes Enhancement",
+        emoji: '🎙️',
+        title: 'Meeting Notes Enhancement',
         description: "Focus on the conversation, we'll handle the notes",
         benefits: [
-          "Record & transcribe with one click",
-          "Get a TLDR of every meeting",
-          "Never miss action items",
+          'Record & transcribe with one click',
+          'Get a TLDR of every meeting',
+          'Never miss action items',
         ],
       },
       chat: {
-        emoji: "🤖",
-        title: "Context-Aware AI Assistant",
-        description: "Like ChatGPT, but it knows your notes",
+        emoji: '🤖',
+        title: 'Context-Aware AI Assistant',
+        description: 'Like ChatGPT, but it knows your notes',
         benefits: [
-          "Summarize YouTube videos instantly",
-          "Get answers from your notes",
-          "Generate content that matches your style",
+          'Summarize YouTube videos instantly',
+          'Get answers from your notes',
+          'Generate content that matches your style',
         ],
       },
     } as const;
@@ -496,7 +631,9 @@ export const Demo = () => {
     return (
       <div className="bg-transparent border-b border-border">
         <div className="max-w-2xl mx-auto p-4 space-y-3">
-          <p className="text-sm text-muted-foreground uppercase tracking-wider">Functionality Overview</p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wider">
+            Functionality Overview
+          </p>
           <div className="flex items-start gap-4">
             <div className="text-3xl">{info.emoji}</div>
             <div className="space-y-2 flex-1">
@@ -529,13 +666,13 @@ export const Demo = () => {
         <div className="p-4">
           {(() => {
             switch (activeTab) {
-              case "organizer":
+              case 'organizer':
                 return renderOrganizerContent();
-              case "inbox":
+              case 'inbox':
                 return renderInboxContent();
-              case "meetings":
+              case 'meetings':
                 return renderMeetingsContent();
-              case "chat":
+              case 'chat':
                 return renderChatContent();
               default:
                 return null;
@@ -548,7 +685,6 @@ export const Demo = () => {
 
   return (
     <BrowserWindow className="bg-transparent">
-    
       <div className="flex rounded-l-md">
         {/* Left Sidebar - Markdown Editor */}
         <div className="hidden md:block w-[600px] border-r border-border bg-transparent">
@@ -557,40 +693,44 @@ export const Demo = () => {
             <div className="border-b border-border p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">📝 team-sync-notes.md</span>
+                  <span className="text-sm font-medium">
+                    📝 team-sync-notes.md
+                  </span>
                 </div>
-                {activeTab === "meetings" && (
-                  <Button variant="outline" size="sm" onClick={() => setIsRecording(!isRecording)}>
-                    {isRecording ? "Processing..." : "Enhance Note"}
+                {activeTab === 'meetings' && enhancingRecording && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEnhancingRecording(null)}
+                  >
+                    Reset
                   </Button>
                 )}
               </div>
             </div>
-            
+
             {/* Editor Content */}
             <div className="flex-1 p-4 font-mono text-sm overflow-y-auto">
               <div className="space-y-4">
-                {activeTab === "meetings" && !isRecording ? (
+                {activeTab === 'meetings' && !enhancingRecording ? (
                   // Unformatted Note
                   <div className="space-y-4 text-muted-foreground">
                     <div>team sync meeting march 15</div>
                     <div>attendees: john, sarah, mike, lisa</div>
                     <div>
-                      discussed mobile app redesign - user metrics show increasing mobile usage need to prioritize this
-                      talked about q4 roadmap and timeline updates needed
-                      user feedback review showed main pain points: navigation complexity, performance on older devices
+                      discussed mobile app redesign - user metrics show
+                      increasing mobile usage need to prioritize this talked
+                      about q4 roadmap and timeline updates needed user feedback
+                      review showed main pain points: navigation complexity,
+                      performance on older devices
                     </div>
                     <div>
-                      action items
-                      - schedule design team followup
-                      - share notes w/ stakeholders
-                      - update project timeline
-                      - review user feedback in detail
+                      action items - schedule design team followup - share notes
+                      w/ stakeholders - update project timeline - review user
+                      feedback in detail
                     </div>
                     <div>
-                      next steps
-                      mobile first approach
-                      simplified nav structure
+                      next steps mobile first approach simplified nav structure
                       performance optimization sprint
                     </div>
                   </div>
@@ -598,37 +738,59 @@ export const Demo = () => {
                   // Formatted Note
                   <>
                     <div>
-                      <span className="text-[#6366F1]"># Team Sync - Product Review</span>
+                      <span className="text-muted-foreground">Recordings:</span>
+                      <div className="pl-4 mt-1 space-y-1">
+                        <span>- 2026-01-02 Meeting 1.m4a</span>
+                        <span className="text-[#6366F1]">
+                          ![[Recordings/2026-01-02 Meeting 1.m4a]]
+                        </span>
+                      </div>
                     </div>
-                    
+
+                    <div className="border-t border-border pt-2 mt-2">
+                      <span className="text-muted-foreground">---</span>
+                    </div>
+
                     <div>
-                      <span className="text-muted-foreground">## Meeting Details</span>
+                      <span className="text-[#6366F1]">
+                        # Team Sync - Product Review
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-muted-foreground">
+                        ## Meeting Details
+                      </span>
                       <div className="pl-4 mt-2 space-y-1">
-                        <span>**Date**: March 15, 2024</span>
+                        <span>**Date**: January 2, 2026</span>
                         <span>**Attendees**: John, Sarah, Mike, Lisa</span>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-muted-foreground">## Key Discussions</span>
+                      <span className="text-muted-foreground">
+                        ## Key Discussions
+                      </span>
                       <div className="pl-4 mt-2 space-y-2">
                         <span>1. **Mobile App Redesign Priority**</span>
                         <div className="pl-4 text-muted-foreground">
                           - User engagement metrics show increasing mobile usage
-                          - Need to focus on improving mobile experience
-                          - Adopt mobile-first approach
+                          - Need to focus on improving mobile experience - Adopt
+                          mobile-first approach
                         </div>
                         <span>2. **User Feedback Analysis**</span>
                         <div className="pl-4 text-muted-foreground">
-                          - Navigation complexity issues identified
-                          - Performance concerns on older devices
-                          - Simplified navigation structure proposed
+                          - Navigation complexity issues identified -
+                          Performance concerns on older devices - Simplified
+                          navigation structure proposed
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-muted-foreground">## Action Items</span>
+                      <span className="text-muted-foreground">
+                        ## Action Items
+                      </span>
                       <div className="pl-4 mt-2 space-y-1">
                         <span>- [ ] Schedule follow-up with design team</span>
                         <span>- [x] Share meeting notes with stakeholders</span>
@@ -638,7 +800,9 @@ export const Demo = () => {
                     </div>
 
                     <div>
-                      <span className="text-muted-foreground">## Next Steps</span>
+                      <span className="text-muted-foreground">
+                        ## Next Steps
+                      </span>
                       <div className="pl-4 mt-2 space-y-1">
                         <span>1. Implement mobile-first approach</span>
                         <span>2. Redesign navigation structure</span>
@@ -647,11 +811,17 @@ export const Demo = () => {
                     </div>
 
                     <div>
-                      <span className="text-muted-foreground">## Related Notes</span>
+                      <span className="text-muted-foreground">
+                        ## Related Notes
+                      </span>
                       <div className="pl-4 mt-2 space-y-1">
                         <span className="text-[#6366F1]">[[Q4 Planning]]</span>
-                        <span className="text-[#6366F1]">[[Mobile App Redesign]]</span>
-                        <span className="text-[#6366F1]">[[User Feedback Q1 2024]]</span>
+                        <span className="text-[#6366F1]">
+                          [[Mobile App Redesign]]
+                        </span>
+                        <span className="text-[#6366F1]">
+                          [[User Feedback Q1 2024]]
+                        </span>
                       </div>
                     </div>
 
@@ -678,10 +848,12 @@ export const Demo = () => {
               {tabs.map((tab) => (
                 <Button
                   key={tab.id}
-                  variant={activeTab === tab.id ? "default" : "ghost"}
+                  variant={activeTab === tab.id ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`text-sm ${activeTab === tab.id ? "bg-primary text-white" : ""}`}
+                  className={`text-sm ${
+                    activeTab === tab.id ? 'bg-primary text-white' : ''
+                  }`}
                 >
                   {tab.label}
                 </Button>
