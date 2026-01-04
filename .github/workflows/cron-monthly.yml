@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Reset Tokens
         run: |
-          curl -X GET \
+          response=$(curl -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            ${{ secrets.VERCEL_URL }}/api/cron/reset-tokens
+            -L \
+            -s \
+            -w "\nHTTP Status: %{http_code}\n" \
+            ${{ secrets.VERCEL_URL }}/api/cron/reset-tokens)
+          echo "API Response:"
+          echo "$response"
+          # Try to format as JSON if jq is available
+          echo "$response" | grep -v "HTTP Status" | jq '.' 2>/dev/null || echo "$response" | grep -v "HTTP Status"
