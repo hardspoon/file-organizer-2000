@@ -44,7 +44,12 @@ async function ensureAuthorizedUser(req: NextRequest) {
 
   try {
     const { userId } = await handleAuthorizationV2(req);
-    return { userId, licenseKey: initialLicenseKey };
+    return {
+      userId,
+      licenseKey: initialLicenseKey,
+      wasAnonymousUserCreated: false,
+      hadInvalidKey: false,
+    };
   } catch (error) {
     // Log detailed information about the auth failure
     const errorMessage = error instanceof Error ? error.message : String(error);
