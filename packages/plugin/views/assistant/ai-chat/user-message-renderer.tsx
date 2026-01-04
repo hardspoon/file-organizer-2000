@@ -7,9 +7,9 @@ interface UserMarkdownProps {
 
 export const UserMarkdown: React.FC<UserMarkdownProps> = ({ content }) => {
   return (
-    <MarkdownContent 
-      content={content} 
-      className="simple-obsidian-renderer p-3"
+    <MarkdownContent
+      content={content}
+      className="simple-obsidian-renderer p-0 m-0"
     />
   );
 };

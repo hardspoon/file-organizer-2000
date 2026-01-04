@@ -102,7 +102,53 @@ export const AIMarkdown: React.FC<AIMarkdownProps> = ({ content, app }) => {
   }, [plugin.app]);
 
   return (
-    <div className="markdown-preview-view" ref={containerRef}>
+    <div
+      className="markdown-preview-view"
+      ref={containerRef}
+      style={{ marginTop: 0, paddingTop: 0 }}
+    >
+      <style>{`
+        .markdown-preview-view {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        /* Normalize first block margin - critical for alignment */
+        .markdown-preview-view > *:first-child {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        .markdown-preview-view p:first-child,
+        .markdown-preview-view div:first-child,
+        .markdown-preview-view ul:first-child,
+        .markdown-preview-view ol:first-child,
+        .markdown-preview-view blockquote:first-child,
+        .markdown-preview-view h1:first-child,
+        .markdown-preview-view h2:first-child,
+        .markdown-preview-view h3:first-child,
+        .markdown-preview-view h4:first-child,
+        .markdown-preview-view h5:first-child,
+        .markdown-preview-view h6:first-child {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        .markdown-preview-view p {
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        /* Normalize first paragraph margin */
+        .markdown-preview-view p.first-paragraph {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+        }
+        /* Override any Obsidian preview CSS that might add margins */
+        .markdown-preview-view .markdown-preview-section > *:first-child {
+          margin-top: 0 !important;
+        }
+      `}</style>
       {processedContent.split(/(\[\[.*?\]\])/g).map((part, i) => {
         if (part.startsWith("[[") && part.endsWith("]]")) {
           const inner = part.slice(2, -2);
@@ -127,6 +173,7 @@ export const AIMarkdown: React.FC<AIMarkdownProps> = ({ content, app }) => {
           );
         }
 
+        const isFirstPart = i === 0;
         return (
           <ReactMarkdown
             key={i}
@@ -154,7 +201,10 @@ export const AIMarkdown: React.FC<AIMarkdownProps> = ({ content, app }) => {
                   </pre>
                 ),
               p: ({ children, ...props }) => (
-                <p {...props} className="mb-2 last:mb-0 leading-relaxed">
+                <p
+                  {...props}
+                  className={`mb-2 last:mb-0 leading-relaxed ${isFirstPart ? 'first-paragraph' : ''}`}
+                >
                   {children}
                 </p>
               ),

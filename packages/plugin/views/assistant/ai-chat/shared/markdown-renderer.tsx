@@ -26,9 +26,9 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
     const handleLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const linkEl = target.closest('a');
-      
+
       if (!linkEl) return;
-      
+
       const href = linkEl.getAttribute('href');
       if (!href) return;
 
@@ -37,12 +37,12 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
       }
 
       e.preventDefault();
-      
+
       let linktext = href;
       if (href.startsWith('[[')) {
         linktext = href.replace(/^\[\[/, '').replace(/\]\]$/, '');
       }
-      
+
       plugin.app.workspace.openLinkText(
         linktext,
         activeFile?.path || '',
@@ -64,7 +64,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
       try {
         const leaf = plugin.app.workspace.getMostRecentLeaf();
         const tempContainer = document.createElement("div");
-        
+
         if (leaf?.view instanceof MarkdownView) {
           await MarkdownRenderer.render(
             plugin.app,
@@ -81,7 +81,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
             plugin
           );
         }
-        
+
         setRenderedContent(tempContainer.innerHTML);
       } catch (e) {
         logger.error("Error rendering markdown:", e);
@@ -102,13 +102,36 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
   }, [plugin.app]);
 
   return (
-    <div className={`markdown-content-wrapper ${className}`}>
+    <div className={`markdown-content-wrapper ${className}`} style={{ margin: 0, padding: 0 }}>
       {children}
-      <div 
+      <div
         ref={contentRef}
         className="markdown-rendered select-text"
+        style={{ marginTop: 0, paddingTop: 0 }}
         dangerouslySetInnerHTML={{ __html: renderedContent }}
       />
+      <style>{`
+        .markdown-content-wrapper .markdown-rendered {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .markdown-content-wrapper .markdown-rendered > *:first-child {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        .markdown-content-wrapper .markdown-rendered p:first-child {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        .markdown-content-wrapper .markdown-rendered p {
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+      `}</style>
     </div>
   );
 };

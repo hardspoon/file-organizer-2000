@@ -1,6 +1,7 @@
 # Orphaned Code Analysis Report
 
 **Generated:** 2025-01-22
+**Last Updated:** 2026-01-03
 **Analyzed Packages:** packages/web, packages/plugin
 **Analysis Type:** Deep Static Code Analysis
 
@@ -407,54 +408,42 @@ This finding is **OBSOLETE**. The duplicate import issue does not exist in the c
 
 ---
 
-### 2.2 Deprecated handleAuthorization Function
+### 2.2 Deprecated handleAuthorization Function - ✅ VERIFIED FIXED
 
 **Location:** `packages/web/lib/handleAuthorization.ts:298`
-**Severity:** HIGH
+**Status:** ✅ **FIXED** (All endpoints migrated to V2)
+**Severity:** ~~HIGH~~ → **RESOLVED**
 **Certainty:** HIGH (100%)
+**Verification Date:** 2026-01-03
 
 **Description:**
-Function marked with `@deprecated` JSDoc but still actively used.
+Function marked with `@deprecated` JSDoc. **All endpoints have been migrated to `handleAuthorizationV2`.**
 
-**Usage Count:**
+**Verification:**
 
-```bash
-grep -r "handleAuthorization" packages/web/app/api --include="*.ts" | grep -c "import.*handleAuthorization"
-# Result: 13 imports of deprecated version
-```
+- ✅ **ALL ENDPOINTS MIGRATED** - No usage of deprecated `handleAuthorization` found
+- ✅ All API routes now use `handleAuthorizationV2`
+- ✅ Git history shows commit `c1fcdaac` (Nov 22, 2025) completed migration
+- ✅ Commit message: "refactor: migrate remaining 9 AI endpoints to handleAuthorizationV2"
+- ✅ Commit explicitly states: "Progress: 13/13 endpoints migrated ✅"
 
-**Affected Files:**
+**Previous Analysis:**
 
-- `/api/(newai)/fabric-classify/route.ts`
-- `/api/(newai)/classify1/route.ts`
-- `/api/(newai)/title/v2/route.ts`
-- `/api/(newai)/modify/route.ts`
-- `/api/(newai)/vision/route.ts`
-- `/api/(newai)/tags/v2/route.ts`
-- `/api/(newai)/format-stream/route.ts`
-- `/api/(newai)/concepts-and-chunks/route.ts`
-- `/api/(newai)/format/route.ts`
-- `/api/(newai)/folders/v2/route.ts`
-- `/api/(newai)/folders/route.ts`
+- Original analysis reported 13 endpoints using deprecated `handleAuthorization`
+- All endpoints have been successfully migrated to `handleAuthorizationV2`
 
-**Recommendation:**
-
-- URGENT: Migrate all usages to `handleAuthorizationV2`
-- Add runtime deprecation warning
-- Set timeline for removal (e.g., 2 releases from now)
-
-**Impact:**
-
-- High - affects authentication flow across 13 API endpoints
-- Security implications if old auth has known issues
+**Conclusion:**
+This finding is **OBSOLETE**. All deprecated auth usage has been eliminated. The migration is complete. No action needed.
 
 ---
 
-### 2.3 Commented-Out Webhook Handlers
+### 2.3 Commented-Out Webhook Handlers - ✅ VERIFIED (Intentionally Disabled)
 
 **Location:** `packages/web/app/api/webhook/route.ts:15-17`
-**Severity:** LOW
+**Status:** ✅ **VERIFIED** (Intentionally Disabled)
+**Severity:** ~~LOW~~ → **RESOLVED**
 **Certainty:** HIGH (100%)
+**Verification Date:** 2026-01-03
 
 **Description:**
 Two webhook handlers commented out in production code:
@@ -469,15 +458,29 @@ const HANDLERS = {
 };
 ```
 
-**Recommendation:**
+**Verification:**
 
-- Document WHY these are commented out
-- If intentionally disabled, remove imports
-- If bug/testing, add TODO comment with reason
+- ✅ Handler `handlePaymentIntentSucceeded` is fully implemented (122 lines)
+- ✅ Handler is imported but commented out to prevent duplicate processing
+- ✅ Current flow: All payments processed via `checkout.session.completed` handler
+- ✅ Reason for disabling: Prevents duplicate processing (both events fire for same payment)
 
-**Impact:**
+**Current Implementation:**
 
-- Low-Medium - Could indicate incomplete Stripe integration
+- Handler functionality includes:
+  - Token top-ups (`handleTopUp`)
+  - Minutes top-ups (`handleTopUpMinutes`)
+  - Regular subscription payments
+  - Proper error handling and validation
+
+**Conclusion:**
+This is **NOT a bug** - it's an intentional design decision. The handler is complete but intentionally disabled to avoid duplicate processing. Current implementation works correctly without it.
+
+**Recommendations:**
+
+1. Add code comment explaining why handler is disabled
+2. Consider adding idempotency checks if handler needs to be enabled in future
+3. Remove handler code if it's confirmed to never be needed
 
 ---
 
@@ -539,23 +542,31 @@ Monthly token reset for subscription users.
 
 ## 4. SUMMARY OF FINDINGS
 
-### Immediate Action Required (HIGH Priority):
+### ✅ Completed/Resolved:
 
-1. **Migrate deprecated `handleAuthorization`** - 13 files affected
-2. **Review commented webhook handlers** - Potential incomplete Stripe integration
-3. **Remove `updateAnonymousUserEmail`** - Confirmed unused function
+1. ✅ **Migrate deprecated `handleAuthorization`** - **FIXED** (All 13 endpoints migrated to V2)
+2. ✅ **Review commented webhook handlers** - **VERIFIED** (Intentionally disabled, not a bug)
+3. ✅ **Remove duplicate imports** - **FIXED** (Commit a1b6bd02)
+4. ✅ **Clean up upload-test** - **REMOVED** (Security fix - BUG-003)
+5. ✅ **Document fabric-classify** - **RESOLVED** (Feature removed from project)
+6. ✅ **Remove `updateAnonymousUserEmail`** - **RESOLVED** (Function doesn't exist)
 
-### Medium Priority:
+### Remaining Action Items (Medium Priority):
 
-4. **Deprecate old `/api/folders` route** - Superseded by v2
-5. **Review check-tier endpoint** - Possibly unused
-6. **Clean up upload-test** - Security review needed
+1. **Deprecate old `/api/folders` route** - Superseded by v2, no active usage found
 
-### Low Priority (Code Cleanup):
+   - Status: ✅ Verified orphaned
+   - Recommendation: Safe to remove after deprecation period
 
-7. **Remove duplicate imports** in plugin index.ts
-8. **Document fabric-classify** endpoint purpose
-9. **Verify cron jobs** are properly configured
+2. **Review check-tier endpoint** - Possibly unused
+   - Status: ✅ Verified orphaned
+   - Recommendation: Safe to remove (functionality covered by `/api/token-usage`)
+
+### Low Priority (Maintenance):
+
+3. **Verify cron jobs** are properly configured
+   - `process-pending-uploads` - Active infrastructure
+   - `reset-tokens` - Critical billing infrastructure
 
 ---
 
@@ -596,6 +607,28 @@ Monthly token reset for subscription users.
 
 ---
 
+---
+
+## 7. UPDATE LOG
+
+**2026-01-03 Updates:**
+
+- ✅ Verified all deprecated `handleAuthorization` usage migrated to V2
+- ✅ Verified commented webhook handlers are intentionally disabled (not a bug)
+- ✅ Verified duplicate imports fixed (commit a1b6bd02)
+- ✅ Verified upload-test infrastructure removed (security fix)
+- ✅ Verified fabric-classify feature removed
+- ✅ Updated summary to reflect current status
+
+**2025-01-22:**
+
+- Initial analysis completed
+- Identified 17 orphaned code items
+- Created prioritized action plan
+
+---
+
 **Report prepared by:** AI Code Analysis Agent
+**Last Updated:** 2026-01-03
 **Review recommended by:** Senior Engineer
-**Next review:** Q2 2025 or after major refactors
+**Next review:** Q2 2026 or after major refactors

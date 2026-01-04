@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Avatar } from "./avatar";
+import { User, Bot } from "lucide-react";
 import { AIMarkdown } from "./ai-message-renderer";
 import { UserMarkdown } from "./user-message-renderer";
 import { Message } from "ai";
@@ -8,17 +8,41 @@ import { usePlugin } from "../provider";
 import { Attachment } from "./types/attachments";
 import { AppendButton } from "./components/append-button";
 import { CopyButton } from "./components/copy-button";
+import { RefreshButton } from "./components/refresh-button";
 
 interface MessageRendererProps {
   message: Message & {
     experimental_attachments?: Attachment[];
+    createdAt?: number;
   };
+  onMessageRefresh?: (messageId: string) => void;
 }
 
 export const MessageRenderer: React.FC<MessageRendererProps> = ({
   message,
+  onMessageRefresh,
 }) => {
   const plugin = usePlugin();
+
+  // Format timestamp - use createdAt if available, otherwise fallback to message ID timestamp or current time
+  const getTimestamp = () => {
+    if (message.createdAt) {
+      return window.moment(message.createdAt).format("MMM D, YYYY h:mm A");
+    }
+    // Try to extract timestamp from message ID if it contains one
+    const idMatch = message.id.match(/\d+/);
+    if (idMatch) {
+      const timestamp = parseInt(idMatch[0]);
+      if (timestamp > 1000000000000) {
+        // Looks like a timestamp (milliseconds)
+        return window.moment(timestamp).format("MMM D, YYYY h:mm A");
+      }
+    }
+    // Fallback to relative time or current time
+    return window.moment().format("MMM D, YYYY h:mm A");
+  };
+
+  const timestamp = getTimestamp();
 
   // Only hide message if it has tool invocations that are NOT complete (no results yet)
   // If all tool invocations have results, we should still render the message content
@@ -38,33 +62,29 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 
   return (
     <motion.div
-      className={`flex items-start gap-3 py-2.5 group ${
-        message.role === "assistant"
-          ? "bg-[--background-secondary] rounded-lg px-3 border-l-2 border-[--interactive-accent]"
-          : ""
-      }`}
+      className="flex items-start gap-3 py-2.5"
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Role indicator with better styling */}
-      <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-          message.role === "user"
-            ? "bg-[--background-modifier-active-hover] text-[--text-normal]"
-            : "bg-[--interactive-accent] text-[--text-on-accent]"
-        }`}
-      >
-        {message.role === "user" ? "U" : "AI"}
+      {/* Icon on the left - top-aligned with small padding to match text baseline */}
+      <div className="flex-shrink-0 w-8 h-8 flex items-start justify-center pt-[2px]">
+        {message.role === "user" ? (
+          <User size={16} className="text-[--interactive-accent]" />
+        ) : (
+          <Bot size={16} className="text-[--interactive-accent]" />
+        )}
       </div>
 
-      <div className="flex-1 min-w-0">
+      {/* Message content - top-aligned, consistent line height */}
+      <div className="flex-1 min-w-0 flex flex-col leading-snug">
         <div
-          className={`text-sm ${
+          className={`text-sm leading-snug m-0 ${
             message.role === "assistant"
               ? "text-[--text-normal]"
               : "text-[--text-normal]"
           }`}
+          style={{ marginTop: 0, paddingTop: 0, marginLeft: 0, paddingLeft: 0 }}
         >
           {message.role === "user" ? (
             <UserMarkdown content={message.content} />
@@ -73,12 +93,25 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
           )}
         </div>
 
-        {message.role === "assistant" && (
-          <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <AppendButton content={message.content} />
-            <CopyButton content={message.content} />
+        {/* Timestamp and buttons row - perfectly aligned */}
+        <div className="flex items-baseline justify-between mt-1 gap-2">
+          <div className="text-xs text-[--text-muted] flex-shrink-0">
+            {timestamp}
           </div>
-        )}
+          {/* Action buttons on the right - at same baseline as timestamp */}
+          {message.role === "assistant" && (
+            <div className="flex-shrink-0 flex flex-row gap-0.5 items-center">
+              {onMessageRefresh && (
+                <RefreshButton
+                  messageId={message.id}
+                  onRefresh={onMessageRefresh}
+                />
+              )}
+              <AppendButton content={message.content} />
+              <CopyButton content={message.content} />
+            </div>
+          )}
+        </div>
 
         {message.experimental_attachments &&
           message.experimental_attachments.length > 0 && (

@@ -29,7 +29,10 @@ export const AppendButton: React.FC<AppendButtonProps> = ({ content }) => {
   return (
     <button
       onClick={handleAppend}
-      className="p-1 hover:bg-[--background-modifier-hover] rounded"
+      className="p-0.5 rounded outline-none border-none shadow-none bg-transparent hover:shadow-sm transition-shadow flex items-center justify-center"
+      style={{ boxShadow: 'none', width: '20px', height: '20px', backgroundColor: 'transparent' }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
       title="Append to current note"
     >
       <FileText size={16} className="text-[--text-muted]" />
