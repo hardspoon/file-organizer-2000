@@ -13,6 +13,7 @@ interface SimilarFolderBoxProps {
   file: TFile | null;
   content: string;
   refreshKey: number;
+  onTokenLimitError?: (error: string) => void;
 }
 
 export const SimilarFolderBox: React.FC<SimilarFolderBoxProps> = ({
@@ -20,6 +21,7 @@ export const SimilarFolderBox: React.FC<SimilarFolderBoxProps> = ({
   file,
   content,
   refreshKey,
+  onTokenLimitError,
 }) => {
   const [suggestions, setSuggestions] = React.useState<FolderSuggestion[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -58,6 +60,16 @@ export const SimilarFolderBox: React.FC<SimilarFolderBoxProps> = ({
       setSuggestions(filteredSuggestions);
     } catch (err) {
       logger.error("Error fetching folders:", err);
+
+      // Check if this is a token limit error
+      if (err && typeof err === 'object' && 'status' in err && (err as any).status === 429) {
+        const errorMessage = (err as any).message || "Token limit exceeded. Please upgrade your plan for more tokens.";
+        setError(new Error(errorMessage));
+        // Notify parent component to show upgrade button
+        onTokenLimitError?.(errorMessage);
+        return;
+      }
+
       const errorMessage =
         typeof err === "object" && err !== null
           ? err.error?.message || err.error || err.message || "Unknown error"
@@ -67,7 +79,7 @@ export const SimilarFolderBox: React.FC<SimilarFolderBoxProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [content, file, plugin]);
+  }, [content, file, plugin, onTokenLimitError]);
 
   React.useEffect(() => {
     suggestFolders();

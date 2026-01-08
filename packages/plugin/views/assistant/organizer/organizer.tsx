@@ -21,6 +21,7 @@ import { tw } from "../../../lib/utils";
 interface AssistantViewProps {
   plugin: FileOrganizer;
   leaf: WorkspaceLeaf;
+  onTokenLimitError?: (error: string) => void;
 }
 
 const checkIfIsMediaFile = (file: TFile | null): boolean => {
@@ -31,6 +32,7 @@ const checkIfIsMediaFile = (file: TFile | null): boolean => {
 export const AssistantView: React.FC<AssistantViewProps> = ({
   plugin,
   leaf,
+  onTokenLimitError,
 }) => {
   const [activeFile, setActiveFile] = React.useState<TFile | null>(null);
   const [noteContent, setNoteContent] = React.useState<string>("");
@@ -356,6 +358,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({
             file={activeFile}
             content={noteContent}
             refreshKey={refreshKey}
+            onTokenLimitError={onTokenLimitError}
             onFileRename={async newFile => {
               // Set flag to prevent updateActiveFile from interfering
               isRenamingRef.current = true;
@@ -405,6 +408,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({
             file={activeFile}
             content={noteContent}
             refreshKey={refreshKey}
+            onTokenLimitError={onTokenLimitError}
           />,
           "Error loading tags"
         )}
@@ -431,6 +435,7 @@ export const AssistantView: React.FC<AssistantViewProps> = ({
             file={activeFile}
             content={noteContent}
             refreshKey={refreshKey}
+            onTokenLimitError={onTokenLimitError}
           />,
           "Error loading folder suggestions"
         )}

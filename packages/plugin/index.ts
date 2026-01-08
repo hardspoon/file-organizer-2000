@@ -860,6 +860,25 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
+      // Special handling for 429 (token limit exceeded)
+      if (response.status === 429) {
+        let errorMessage =
+          "Token limit exceeded. Please upgrade your plan for more tokens.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use default message
+        }
+        // Throw a specific error that can be caught by the UI
+        const error = new Error(errorMessage) as any;
+        error.status = 429;
+        error.isTokenLimitError = true;
+        throw error;
+      }
+
       // Try to extract error message from response body
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
@@ -1139,6 +1158,24 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
+      // Special handling for 429 (token limit exceeded)
+      if (response.status === 429) {
+        let errorMessage = "Token limit exceeded. Please upgrade your plan for more tokens.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use default message
+        }
+        // Throw a specific error that can be caught by the UI
+        const error = new Error(errorMessage) as any;
+        error.status = 429;
+        error.isTokenLimitError = true;
+        throw error;
+      }
+
       // Try to extract error message from response body
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
@@ -1180,6 +1217,25 @@ export default class FileOrganizer extends Plugin {
     });
 
     if (!response.ok) {
+      // Special handling for 429 (token limit exceeded)
+      if (response.status === 429) {
+        let errorMessage =
+          "Token limit exceeded. Please upgrade your plan for more tokens.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If parsing fails, use default message
+        }
+        // Throw a specific error that can be caught by the UI
+        const error = new Error(errorMessage) as any;
+        error.status = 429;
+        error.isTokenLimitError = true;
+        throw error;
+      }
+
       // Try to extract error message from response body
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {

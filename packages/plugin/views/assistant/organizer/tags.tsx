@@ -18,6 +18,7 @@ interface SimilarTagsProps {
   file: TFile | null;
   content: string;
   refreshKey: number;
+  onTokenLimitError?: (error: string) => void;
 }
 
 export const SimilarTags: React.FC<SimilarTagsProps> = ({
@@ -25,6 +26,7 @@ export const SimilarTags: React.FC<SimilarTagsProps> = ({
   file,
   content,
   refreshKey,
+  onTokenLimitError,
 }) => {
   const [existingTags, setExistingTags] = React.useState<
     { tag: string; score: number; reason: string }[]
@@ -61,13 +63,20 @@ export const SimilarTags: React.FC<SimilarTagsProps> = ({
         setNewTags(newTagsResult || []);
       } catch (error) {
         logger.error("Error in tag fetching process:", error);
+
+        // Check if this is a token limit error
+        if (error && typeof error === 'object' && 'status' in error && (error as any).status === 429) {
+          const errorMessage = (error as any).message || "Token limit exceeded. Please upgrade your plan for more tokens.";
+          // Notify parent component to show upgrade button
+          onTokenLimitError?.(errorMessage);
+        }
       } finally {
         setLoading(false);
         setInitialLoadComplete(true);
       }
     };
     fetchTags();
-  }, [file, content, refreshKey]);
+  }, [file, content, refreshKey, plugin, onTokenLimitError]);
 
   const handleTagClick = (tag: string) => {
     plugin.appendTag(file!, tag);

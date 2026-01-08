@@ -78,7 +78,7 @@ function TabContent({
           activeTab === "organizer" ? "block" : "hidden"
         )}
       >
-        <AssistantView plugin={plugin} leaf={leaf} />
+        <AssistantView plugin={plugin} leaf={leaf} onTokenLimitError={onTokenLimitError} />
       </div>
 
       <div

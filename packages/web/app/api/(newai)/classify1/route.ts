@@ -1,7 +1,7 @@
 // app/app/api/(ai)/classify/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { classifyDocument } from "../aiService";
-import { handleAuthorizationV2 } from "@/lib/handleAuthorization";
+import { handleAuthorizationV2, AuthorizationError } from "@/lib/handleAuthorization";
 import { incrementAndLogTokenUsage } from "@/lib/incrementAndLogTokenUsage";
 import { getModel } from "@/lib/models";
 
@@ -30,12 +30,28 @@ export async function POST(request: NextRequest) {
     await incrementAndLogTokenUsage(userId, tokens);
     const documentType = response.object.documentType;
     return NextResponse.json({ documentType });
-  } catch (error: any) {
-    if (error) {
+  } catch (error) {
+    // Properly handle AuthorizationError with status codes
+    if (error instanceof AuthorizationError) {
       return NextResponse.json(
-        { error: error.message || 'Failed to classify document' },
-        { status: error.status || 500 }
+        { error: error.message },
+        { status: error.status }
       );
     }
+
+    // Handle errors with status property
+    if (error && typeof error === 'object' && 'status' in error && 'message' in error) {
+      return NextResponse.json(
+        { error: (error as any).message },
+        { status: (error as any).status || 500 }
+      );
+    }
+
+    // Fallback for other errors
+    const errorMessage = error instanceof Error ? error.message : 'Failed to classify document';
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
   }
 }

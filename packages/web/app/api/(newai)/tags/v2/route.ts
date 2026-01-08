@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleAuthorizationV2 } from "@/lib/handleAuthorization";
+import { handleAuthorizationV2, AuthorizationError } from "@/lib/handleAuthorization";
 import { incrementAndLogTokenUsage } from "@/lib/incrementAndLogTokenUsage";
 import { getModel } from "@/lib/models";
 import { z } from "zod";
@@ -63,9 +63,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ tags: sortedTags });
   } catch (error) {
     console.error('Tag generation error:', error);
+
+    // Properly handle AuthorizationError with status codes
+    if (error instanceof AuthorizationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+
+    // Handle errors with status property
+    if (error && typeof error === 'object' && 'status' in error && 'message' in error) {
+      return NextResponse.json(
+        { error: (error as any).message },
+        { status: (error as any).status || 500 }
+      );
+    }
+
+    // Fallback for other errors
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate tags';
     return NextResponse.json(
-      { error: error.message || 'Failed to generate tags' },
-      { status: error.status || 500 }
+      { error: errorMessage },
+      { status: 500 }
     );
   }
 }

@@ -15,6 +15,7 @@ interface ClassificationBoxProps {
   content: string;
   refreshKey: number;
   onFileRename?: (newFile: TFile) => void;
+  onTokenLimitError?: (error: string) => void;
 }
 
 export const ClassificationContainer: React.FC<ClassificationBoxProps> = ({
@@ -23,6 +24,7 @@ export const ClassificationContainer: React.FC<ClassificationBoxProps> = ({
   content,
   refreshKey,
   onFileRename,
+  onTokenLimitError,
 }) => {
   const [formatBehavior, setFormatBehavior] = React.useState<
     "override" | "newFile" | "append"
@@ -329,6 +331,7 @@ export const ClassificationContainer: React.FC<ClassificationBoxProps> = ({
           content={content}
           refreshKey={refreshKey}
           onFormat={handleFormat}
+          onTokenLimitError={onTokenLimitError}
         />
       </div>
     </div>

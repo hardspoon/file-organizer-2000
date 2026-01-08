@@ -15,6 +15,7 @@ interface UserTemplatesProps {
   content: string;
   refreshKey: number;
   onFormat: (templateName: string) => void;
+  onTokenLimitError?: (error: string) => void;
 }
 
 export const UserTemplates: React.FC<UserTemplatesProps> = ({
@@ -23,6 +24,7 @@ export const UserTemplates: React.FC<UserTemplatesProps> = ({
   content,
   refreshKey,
   onFormat,
+  onTokenLimitError,
 }) => {
   const [templateNames, setTemplateNames] = React.useState<string[]>([]);
   const [selectedTemplateName, setSelectedTemplateName] = React.useState<
@@ -106,6 +108,14 @@ export const UserTemplates: React.FC<UserTemplatesProps> = ({
         setClassificationStatus("success");
       } catch (error) {
         logger.error("Error in fetchClassificationAndTemplates:", error);
+
+        // Check if this is a token limit error
+        if (error && typeof error === 'object' && 'status' in error && (error as any).status === 429) {
+          const errorMessage = (error as any).message || "Token limit exceeded. Please upgrade your plan for more tokens.";
+          // Notify parent component to show upgrade button
+          onTokenLimitError?.(errorMessage);
+        }
+
         setClassificationStatus("error");
       }
     };
