@@ -378,9 +378,17 @@ export default class FileOrganizer extends Plugin {
           const tagMatches = tagsContent.match(/["']([^"']*)["']/g) || [];
           const cleanedTags = tagMatches.map((tagMatch: string) => {
             // Remove quotes and # symbols
-            const cleaned = tagMatch
+            let cleaned = tagMatch
               .replace(/^["']|["']$/g, "")
               .replace(/^#+/, "");
+
+            // Sanitize tag name: replace spaces with underscores (Obsidian requirement)
+            // This handles tags like "social media" -> "social_media"
+            cleaned = cleaned.replace(/\s+/g, "_");
+
+            // Remove any leading or trailing underscores
+            cleaned = cleaned.replace(/^_+|_+$/g, "");
+
             return `"${cleaned}"`;
           });
 
@@ -1372,7 +1380,9 @@ export default class FileOrganizer extends Plugin {
     // Add processing status bar item
     this.statusBarItem = this.addStatusBarItem();
     this.statusBarRoot = createRoot(this.statusBarItem);
-    this.statusBarRoot.render(React.createElement(ProcessingStatusBar, { plugin: this }));
+    this.statusBarRoot.render(
+      React.createElement(ProcessingStatusBar, { plugin: this })
+    );
   }
   async saveSettings() {
     await this.saveData(this.settings);
