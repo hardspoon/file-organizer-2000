@@ -2,40 +2,18 @@ import { App, TFolder, TFile, normalizePath, parseYaml } from "obsidian";
 import { FileOrganizerSettings } from "./settings";
 import { logger } from "./services/logger";
 
-export async function ensureFolderExists(app: App, folderPath: string) {
-  if (!(await app.vault.adapter.exists(folderPath))) {
-    await app.vault.createFolder(folderPath);
-  }
-}
+// Default template names that come with the plugin
+export const DEFAULT_TEMPLATE_NAMES = [
+  "meeting_note.md",
+  "youtube_video.md",
+  "enhance.md",
+  "research_paper.md",
+  "flash_cards.md",
+] as const;
 
-export async function checkAndCreateFolders(
-  app: App,
-  settings: FileOrganizerSettings
-) {
-  await ensureFolderExists(app, settings.pathToWatch);
-  await ensureFolderExists(app, settings.defaultDestinationPath);
-  await ensureFolderExists(app, settings.attachmentsPath);
-  await ensureFolderExists(app, settings.logFolderPath);
-  await ensureFolderExists(app, settings.templatePaths);
-
-  await ensureFolderExists(app, settings.stagingFolder);
-  await ensureFolderExists(app, settings.backupFolderPath);
-  await ensureFolderExists(app, settings.recordingsFolderPath);
-}
-
-export async function checkAndCreateTemplates(
-  app: App,
-  settings: FileOrganizerSettings
-) {
-  const meetingNoteTemplatePath = `${settings.templatePaths}/meeting_note.md`;
-  const youtubeVideoTemplatePath = `${settings.templatePaths}/youtube_video.md`;
-  const enhanceTemplatePath = `${settings.templatePaths}/enhance.md`;
-  const researchPaperTemplatePath = `${settings.templatePaths}/research_paper.md`;
-
-  if (!(await app.vault.adapter.exists(meetingNoteTemplatePath))) {
-    await app.vault.create(
-      meetingNoteTemplatePath,
-      `Contextual Extraction of Discussion Points and Action Items
+// Helper functions to get default template content
+function getMeetingNoteTemplateContent(): string {
+  return `Contextual Extraction of Discussion Points and Action Items
 
 Instruction:
 Analyze the provided content, which includes:
@@ -67,14 +45,11 @@ Output Format:
 - Key excerpts from Transcript 1: [Relevant excerpts related to discussion points and action items].
 - Key excerpts from Transcript 2: [Relevant excerpts related to discussion points and action items].
 - Key highlights from Written Notes: [Direct quotes or summaries from notes].
-`
-    );
-  }
+`;
+}
 
-  if (!(await app.vault.adapter.exists(researchPaperTemplatePath))) {
-    await app.vault.create(
-      researchPaperTemplatePath,
-      `---
+function getResearchPaperTemplateContent(): string {
+  return `---
 
 title: "[Full paper title]"
 
@@ -171,14 +146,11 @@ citation: "[Complete citation in APA/MLA format]"
 - **Potential citations**: [Where in your own writing you might cite this]
 - **Related papers in vault**: [[Paper 1]], [[Paper 2]]
 - **Related concepts**: [[Concept 1]], [[Concept 2]]
-`
-    );
-  }
+`;
+}
 
-  if (!(await app.vault.adapter.exists(youtubeVideoTemplatePath))) {
-    await app.vault.create(
-      youtubeVideoTemplatePath,
-      `Please create an Obsidian note using the video link and any available transcript or additional context. The note must include:
+function getYoutubeVideoTemplateContent(): string {
+  return `Please create an Obsidian note using the video link and any available transcript or additional context. The note must include:
 
 1. Frontmatter (at the top) with the following properties:
 
@@ -260,14 +232,11 @@ summary: "A comprehensive guide to building modern React applications with hooks
 - Implementing Context API for global state
 - Best practices for component structure and organization
 - Performance optimization techniques
-- Deployment strategies and recommendations`
-    );
-  }
+- Deployment strategies and recommendations`;
+}
 
-  if (!(await app.vault.adapter.exists(enhanceTemplatePath))) {
-    await app.vault.create(
-      enhanceTemplatePath,
-      `1. **Use Headings and Subheadings**: Clearly define sections with headings (e.g.,
+function getEnhanceTemplateContent(): string {
+  return `1. **Use Headings and Subheadings**: Clearly define sections with headings (e.g.,
 \`\`\`
 #
 \`\`\`
@@ -297,8 +266,243 @@ summary: "A comprehensive guide to building modern React applications with hooks
 
 9. **Linking and Cross-referencing**: Use internal links to connect related notes or sections within your vault.
 
-10. do not use \`\`\` markdown`
+10. do not use \`\`\` markdown`;
+}
+
+function getFlashCardsTemplateContent(): string {
+  return `Please create an Obsidian note with interactive flashcards using native Obsidian HTML features. The note must include:
+
+1. Frontmatter (at the top) with the following properties:
+
+---
+
+total: {{number of flashcards created}}
+
+topics: ["{{topic 1}}", "{{topic 2}}", "{{topic 3}}"]
+
+created: "{{current date in YYYY-MM-DD format}}"
+
+---
+
+2. Interactive flashcards using HTML details/summary tags (below the frontmatter).
+
+**Instructions:**
+
+- Extract key concepts, facts, definitions, relationships, and important information from the content
+- Identify all testable knowledge points: definitions, concepts, facts, formulas, relationships, processes, dates, names, theories, principles, etc.
+- Extract 3-7 main topics or themes from the content for the topics array in frontmatter
+- **CRITICAL: Randomize the order of flashcards - mix different topics, difficulty levels, and question types together. Do NOT follow the original content order or group by topic. Create a varied, shuffled study experience.**
+- Create 10-30 flashcards depending on content length and density
+- Prioritize information that is:
+  - Fundamental to understanding the topic
+  - Frequently referenced or important
+  - Easy to forget (dates, numbers, specific details)
+  - Part of a sequence or process
+  - A definition or key concept
+
+- Maintain the exact markdown syntax for the frontmatter block (\`---\` at the top and bottom).
+- Each property in frontmatter must be on its own line with proper YAML indentation
+- Topics should be an array: topics: ["Topic 1", "Topic 2", "Topic 3"]
+- Total should be a number without quotes
+- Created should be a string in quotes with format "YYYY-MM-DD"
+
+- Format each flashcard using HTML details/summary tags:
+  - Each flashcard must be a separate <details> block with class="flashcard"
+  - The <summary> tag must have class="flashcard-question" and contain the question
+  - The answer must be wrapped in <div class="flashcard-answer">
+  - Leave a blank line after </summary> and before </details> for proper spacing
+  - Answers can include markdown formatting (bold, italic, lists, links, etc.)
+  - Answers can span multiple paragraphs
+
+- Questions should test understanding, not just recall
+- Answers should be complete but concise (typically 1-4 sentences, but can be longer if needed)
+- Include context and examples when helpful
+- Use clear, specific language
+- Make questions specific and focused (avoid overly broad questions)
+- Include [[internal links]] to related notes or concepts when relevant
+- Use **bold** for key terms in answers
+- Group related information in answers using lists or structured formatting
+
+- Do not use \`\`\` code blocks or markdown code formatting in the output
+- Focus on accuracy and completeness based on the actual content provided
+
+**Example Output Format:**
+
+---
+
+total: 3
+
+topics: ["Cell Biology", "Energy Production", "Molecular Biology"]
+
+created: "2025-01-09"
+
+---
+
+<details class="flashcard">
+<summary class="flashcard-question">What is the primary function of mitochondria?</summary>
+
+<div class="flashcard-answer">
+
+Mitochondria are organelles that produce ATP (adenosine triphosphate) through cellular respiration. They are often called the "powerhouse of the cell" because they generate most of the cell's energy supply.
+
+Related: See also [[Chloroplasts]] for plant cell energy production.
+
+</div>
+
+</details>
+
+<details class="flashcard">
+<summary class="flashcard-question">What is the difference between DNA and RNA?</summary>
+
+<div class="flashcard-answer">
+
+- **DNA**: Double-stranded, contains thymine, stores genetic information
+- **RNA**: Single-stranded, contains uracil, involved in protein synthesis
+
+</div>
+
+</details>
+
+<details class="flashcard">
+<summary class="flashcard-question">How does photosynthesis work?</summary>
+
+<div class="flashcard-answer">
+
+Photosynthesis occurs in two stages:
+
+1. **Light-dependent reactions**: Chlorophyll absorbs light energy, splits water molecules, and produces ATP and NADPH
+2. **Calvin cycle**: Uses ATP and NADPH to convert carbon dioxide into glucose
+
+</div>
+
+</details>
+
+Important Notes:
+- ALWAYS include frontmatter with total, topics, and created date
+- Each property in frontmatter must be on its own line (no nesting, flat structure like the YouTube template)
+- Topics should be an array: topics: ["Topic 1", "Topic 2", "Topic 3"]
+- Created should be a string in quotes: created: "2025-01-09"
+- Total should be a number without quotes: total: 15
+- Use proper HTML syntax - ensure all tags are properly closed
+- Output the actual HTML tags directly (NOT inside markdown code blocks)
+- Each flashcard should be separated by a blank line for readability
+- **RANDOMIZE THE ORDER: Mix topics, difficulty levels, and question types - do not follow source material order**
+- Include [[internal links]] to related concepts when relevant
+- Answers can include markdown formatting like **bold**, *italic*, lists, and [[internal links]]
+- If content is very long, focus on the most important concepts
+- If content is technical, ensure definitions are clear
+- Maintain the original meaning and accuracy of the source material
+- All flashcards will be in one note - users can click to reveal answers
+- This format works natively in Obsidian without requiring any plugins`;
+}
+
+export async function ensureFolderExists(app: App, folderPath: string) {
+  if (!(await app.vault.adapter.exists(folderPath))) {
+    await app.vault.createFolder(folderPath);
+  }
+}
+
+export async function checkAndCreateFolders(
+  app: App,
+  settings: FileOrganizerSettings
+) {
+  await ensureFolderExists(app, settings.pathToWatch);
+  await ensureFolderExists(app, settings.defaultDestinationPath);
+  await ensureFolderExists(app, settings.attachmentsPath);
+  await ensureFolderExists(app, settings.logFolderPath);
+  await ensureFolderExists(app, settings.templatePaths);
+
+  await ensureFolderExists(app, settings.stagingFolder);
+  await ensureFolderExists(app, settings.backupFolderPath);
+  await ensureFolderExists(app, settings.recordingsFolderPath);
+}
+
+export async function checkAndCreateTemplates(
+  app: App,
+  settings: FileOrganizerSettings
+) {
+  const meetingNoteTemplatePath = `${settings.templatePaths}/meeting_note.md`;
+  const youtubeVideoTemplatePath = `${settings.templatePaths}/youtube_video.md`;
+  const enhanceTemplatePath = `${settings.templatePaths}/enhance.md`;
+  const researchPaperTemplatePath = `${settings.templatePaths}/research_paper.md`;
+  const flashCardsTemplatePath = `${settings.templatePaths}/flash_cards.md`;
+
+  if (!(await app.vault.adapter.exists(meetingNoteTemplatePath))) {
+    await app.vault.create(
+      meetingNoteTemplatePath,
+      getMeetingNoteTemplateContent()
     );
+  }
+
+  if (!(await app.vault.adapter.exists(researchPaperTemplatePath))) {
+    await app.vault.create(
+      researchPaperTemplatePath,
+      getResearchPaperTemplateContent()
+    );
+  }
+
+  if (!(await app.vault.adapter.exists(youtubeVideoTemplatePath))) {
+    await app.vault.create(
+      youtubeVideoTemplatePath,
+      getYoutubeVideoTemplateContent()
+    );
+  }
+
+  if (!(await app.vault.adapter.exists(enhanceTemplatePath))) {
+    await app.vault.create(enhanceTemplatePath, getEnhanceTemplateContent());
+  }
+
+  if (!(await app.vault.adapter.exists(flashCardsTemplatePath))) {
+    await app.vault.create(
+      flashCardsTemplatePath,
+      getFlashCardsTemplateContent()
+    );
+  }
+}
+
+// Restore default templates to their original plugin versions
+// Only restores the 5 default templates, does not affect user-created templates
+export async function restoreDefaultTemplates(
+  app: App,
+  settings: FileOrganizerSettings
+) {
+  const templatePaths = {
+    meetingNote: `${settings.templatePaths}/meeting_note.md`,
+    youtubeVideo: `${settings.templatePaths}/youtube_video.md`,
+    enhance: `${settings.templatePaths}/enhance.md`,
+    researchPaper: `${settings.templatePaths}/research_paper.md`,
+    flashCards: `${settings.templatePaths}/flash_cards.md`,
+  };
+
+  const templateContents = {
+    meetingNote: getMeetingNoteTemplateContent(),
+    youtubeVideo: getYoutubeVideoTemplateContent(),
+    enhance: getEnhanceTemplateContent(),
+    researchPaper: getResearchPaperTemplateContent(),
+    flashCards: getFlashCardsTemplateContent(),
+  };
+
+  // Ensure template folder exists
+  await ensureFolderExists(app, settings.templatePaths);
+
+  // Restore each default template
+  for (const [key, path] of Object.entries(templatePaths)) {
+    try {
+      const existing = app.vault.getAbstractFileByPath(path);
+      if (existing && existing instanceof TFile) {
+        // Delete existing file to overwrite
+        await app.vault.delete(existing);
+      }
+      // Create with original content
+      await app.vault.create(
+        path,
+        templateContents[key as keyof typeof templateContents]
+      );
+      logger.info(`Restored default template: ${path}`);
+    } catch (error) {
+      logger.error(`Failed to restore template ${path}:`, error);
+      throw error;
+    }
   }
 }
 

@@ -18,6 +18,11 @@ export async function POST(request: NextRequest) {
       content.includes('## Full Transcript') ||
       content.includes('## YouTube Video Information');
 
+    // Check if this is a flash_cards template
+    const isFlashCardsTemplate = formattingInstruction.includes('flash_cards') ||
+      formattingInstruction.includes('Flash Card Generation') ||
+      formattingInstruction.includes('flashcard');
+
     if (hasYouTubeTranscript) {
       const transcriptMatch = content.match(
         /## Full Transcript\n\n(.+?)(?=\n\n##|$)/s
@@ -28,6 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Add YAML frontmatter reminder for flash_cards template
+    const yamlReminder = isFlashCardsTemplate
+      ? `\n\nIMPORTANT: When generating frontmatter, use flat YAML format with each property on its own line (no nesting). Example:\n---\ntotal: 15\ntopics: ["Topic 1", "Topic 2", "Topic 3"]\ncreated: "2025-01-09"\n---`
+      : '';
+
     const result = await streamText({
       model: model as any,
       system: 'Answer directly in markdown',
@@ -35,7 +45,7 @@ export async function POST(request: NextRequest) {
         {
           role: 'user',
           content: hasYouTubeTranscript
-            ? `Format the following content according to the given instruction. IMPORTANT: The content includes a YouTube video transcript in the "Full Transcript" section - you MUST use this transcript to create a comprehensive, detailed summary as instructed.
+            ? `Format the following content according to the given instruction. IMPORTANT: The content includes a YouTube video transcript in the "Full Transcript" section - you MUST use this transcript to create a comprehensive, detailed summary as instructed.${yamlReminder}
 
 Context:
   Time: ${new Date().toISOString()}
@@ -45,7 +55,8 @@ Content:
 
 Formatting Instruction:
 "${formattingInstruction}"`
-            : `Format the following content according to the given instruction:
+            : `Format the following content according to the given instruction.${yamlReminder}
+
 Context:
   Time: ${new Date().toISOString()}
 

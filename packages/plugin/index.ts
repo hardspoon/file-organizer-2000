@@ -18,6 +18,7 @@ declare class Buffer {
 import {
   Plugin,
   Notice,
+  Modal,
   TFolder,
   TFile,
   moment,
@@ -50,6 +51,7 @@ import {
   ensureFolderExists,
   checkAndCreateFolders,
   checkAndCreateTemplates,
+  restoreDefaultTemplates,
   moveFile,
 } from "./fileUtils";
 
@@ -263,7 +265,9 @@ export default class FileOrganizer extends Plugin {
   }
 
   async appendBackupLinkToCurrentFile(currentFile: TFile, backupFile: TFile) {
-    const backupLink = `\n\n---\n[[${backupFile.path} | Link to original file]]`;
+    // Remove .md extension from path for Obsidian wikilink
+    const backupPath = backupFile.path.replace(/\.md$/, "");
+    const backupLink = `\n\n---\n[[${backupPath} | Link to original file]]`;
 
     await this.app.vault.append(currentFile, backupLink);
   }
@@ -272,7 +276,9 @@ export default class FileOrganizer extends Plugin {
     backupFile: TFile,
     formattedFile: TFile
   ) {
-    const formattedLink = `\n\n---\n[[${formattedFile.path} | Link to formatted file]]`;
+    // Remove .md extension from path for Obsidian wikilink
+    const formattedPath = formattedFile.path.replace(/\.md$/, "");
+    const formattedLink = `\n\n---\n[[${formattedPath} | Link to formatted file]]`;
 
     await this.app.vault.append(backupFile, formattedLink);
   }
@@ -947,6 +953,20 @@ export default class FileOrganizer extends Plugin {
     await checkAndCreateTemplates(this.app, this.settings);
   }
 
+  async restoreTemplates() {
+    try {
+      await restoreDefaultTemplates(this.app, this.settings);
+      new Notice("Default templates restored successfully", 3000);
+      logger.info("Default templates restored");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      new Notice(`Failed to restore templates: ${errorMessage}`, 5000);
+      logger.error("Failed to restore templates:", error);
+      throw error;
+    }
+  }
+
   async ensureFolderExists(folderPath: string) {
     await ensureFolderExists(this.app, folderPath);
   }
@@ -1160,7 +1180,8 @@ export default class FileOrganizer extends Plugin {
     if (!response.ok) {
       // Special handling for 429 (token limit exceeded)
       if (response.status === 429) {
-        let errorMessage = "Token limit exceeded. Please upgrade your plan for more tokens.";
+        let errorMessage =
+          "Token limit exceeded. Please upgrade your plan for more tokens.";
         try {
           const errorData = await response.json();
           if (errorData?.error) {
@@ -1381,6 +1402,59 @@ export default class FileOrganizer extends Plugin {
     });
 
     this.addCommand({
+      id: "restore-default-templates",
+      name: "Restore default templates",
+      callback: async () => {
+        const confirmed = await new Promise<boolean>(resolve => {
+          class RestoreTemplatesModal extends Modal {
+            onOpen() {
+              const { contentEl } = this;
+              contentEl.empty();
+              contentEl.createEl("h2", { text: "Restore Default Templates" });
+              contentEl.createEl("p", {
+                text: "This will restore the following templates to their original plugin versions:",
+              });
+              const list = contentEl.createEl("ul");
+              list.createEl("li", { text: "meeting_note.md" });
+              list.createEl("li", { text: "youtube_video.md" });
+              list.createEl("li", { text: "enhance.md" });
+              list.createEl("li", { text: "research_paper.md" });
+              list.createEl("li", { text: "flash_cards.md" });
+              contentEl.createEl("p", {
+                text: "Your custom templates will not be affected.",
+                attr: { style: "margin-top: 1em; font-weight: bold;" },
+              });
+              const buttonContainer = contentEl.createDiv({
+                attr: { style: "display: flex; gap: 10px; margin-top: 1em;" },
+              });
+              buttonContainer
+                .createEl("button", { text: "Cancel" })
+                .addEventListener("click", () => {
+                  resolve(false);
+                  this.close();
+                });
+              buttonContainer
+                .createEl("button", {
+                  text: "Restore",
+                  attr: { style: "background: var(--interactive-accent);" },
+                })
+                .addEventListener("click", () => {
+                  resolve(true);
+                  this.close();
+                });
+            }
+          }
+          const modal = new RestoreTemplatesModal(this.app);
+          modal.open();
+        });
+
+        if (confirmed) {
+          await this.restoreTemplates();
+        }
+      },
+    });
+
+    this.addCommand({
       id: "view-meetings-metadata",
       name: "View Meetings Metadata (Debug)",
       callback: async () => {
@@ -1575,11 +1649,21 @@ export default class FileOrganizer extends Plugin {
   }
 
   async getTemplateInstructions(templateName: string): Promise<string> {
-    const templateFolder = this.app.vault.getAbstractFileByPath(
-      this.settings.templatePaths
-    );
+    // Ensure template folder exists before accessing it
+    const normalizedPath = normalizePath(this.settings.templatePaths);
+    await ensureFolderExists(this.app, normalizedPath);
+
+    // Ensure templates are created
+    await this.checkAndCreateTemplates();
+
+    // Small delay to ensure folder is fully created
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const templateFolder = this.app.vault.getAbstractFileByPath(normalizedPath);
     if (!templateFolder || !(templateFolder instanceof TFolder)) {
-      logger.error("Template folder not found or is not a valid folder.");
+      logger.error(
+        `Template folder not found or is not a valid folder. Path: ${normalizedPath}`
+      );
       return "";
     }
     // only look at files first
@@ -1595,12 +1679,22 @@ export default class FileOrganizer extends Plugin {
   // create a getTemplatesV2 that returns a list of template names only
   // and doesn't reuse getTemplates()
   async getTemplateNames(): Promise<string[]> {
+    // Ensure template folder exists before accessing it
+    const normalizedPath = normalizePath(this.settings.templatePaths);
+    await ensureFolderExists(this.app, normalizedPath);
+
+    // Ensure templates are created
+    await this.checkAndCreateTemplates();
+
+    // Small delay to ensure folder is fully created
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // get all file names in the template folder
-    const templateFolder = this.app.vault.getAbstractFileByPath(
-      this.settings.templatePaths
-    );
+    const templateFolder = this.app.vault.getAbstractFileByPath(normalizedPath);
     if (!templateFolder || !(templateFolder instanceof TFolder)) {
-      logger.error("Template folder not found or is not a valid folder.");
+      logger.error(
+        `Template folder not found or is not a valid folder. Path: ${normalizedPath}`
+      );
       return [];
     }
     const templateFiles = templateFolder.children.filter(

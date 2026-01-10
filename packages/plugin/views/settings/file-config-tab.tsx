@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FileOrganizer from "../../index";
 import { cleanPath } from "../../someUtils";
-import { normalizePath } from "obsidian";
+import { normalizePath, Modal, Notice } from "obsidian";
 import { Search, X } from "lucide-react";
 import { logger } from "../../services/logger";
 interface FileConfigTabProps {
@@ -454,6 +454,81 @@ export const FileConfigTab: React.FC<FileConfigTabProps> = ({ plugin }) => {
             ),
           "templatePaths"
         )}
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">Restore Default Templates</div>
+            <div className="setting-item-description">
+              Restore the default plugin templates (meeting_note.md, youtube_video.md, enhance.md, research_paper.md, flash_cards.md) to their original versions. Your custom templates will not be affected.
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <button
+              onClick={async () => {
+                const confirmed = await new Promise<boolean>(resolve => {
+                  class RestoreTemplatesModal extends Modal {
+                    onOpen() {
+                      const { contentEl } = this;
+                      contentEl.empty();
+                      contentEl.createEl("h2", { text: "Restore Default Templates" });
+                      contentEl.createEl("p", {
+                        text: "This will restore the following templates to their original plugin versions:",
+                      });
+                      const list = contentEl.createEl("ul");
+                      list.createEl("li", { text: "meeting_note.md" });
+                      list.createEl("li", { text: "youtube_video.md" });
+                      list.createEl("li", { text: "enhance.md" });
+                      list.createEl("li", { text: "research_paper.md" });
+                      list.createEl("li", { text: "flash_cards.md" });
+                      contentEl.createEl("p", {
+                        text: "Your custom templates will not be affected.",
+                        attr: { style: "margin-top: 1em; font-weight: bold;" },
+                      });
+                      const buttonContainer = contentEl.createDiv({
+                        attr: { style: "display: flex; gap: 10px; margin-top: 1em;" },
+                      });
+                      buttonContainer
+                        .createEl("button", { text: "Cancel" })
+                        .addEventListener("click", () => {
+                          resolve(false);
+                          this.close();
+                        });
+                      buttonContainer
+                        .createEl("button", {
+                          text: "Restore",
+                          attr: { style: "background: var(--interactive-accent);" },
+                        })
+                        .addEventListener("click", () => {
+                          resolve(true);
+                          this.close();
+                        });
+                    }
+                  }
+                  const modal = new RestoreTemplatesModal(plugin.app);
+                  modal.open();
+                });
+
+                if (confirmed) {
+                  try {
+                    await plugin.restoreTemplates();
+                  } catch (error) {
+                    // Error is already handled in restoreTemplates method
+                  }
+                }
+              }}
+              style={{
+                padding: "6px 12px",
+                fontSize: "13px",
+                background: "var(--interactive-accent)",
+                color: "var(--text-on-accent)",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Restore Default Templates
+            </button>
+          </div>
+        </div>
         {renderSettingItem(
           "Bypassed notes path",
           "Choose a folder for bypassed notes.",
