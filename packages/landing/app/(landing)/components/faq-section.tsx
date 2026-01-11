@@ -92,7 +92,7 @@ export function FaqSection() {
             answer={`Privacy is important to us. For detailed privacy information, see the questions above.
 
 <strong>Contact Us</strong>
-• Email: <a href="mailto:notecompanionteam@gmail.com" class="text-accent underline hover:no-underline">notecompanionteam@gmail.com</a>
+• Email: <a href="mailto:info@notecompanion.ai" class="text-accent underline hover:no-underline">info@notecompanion.ai</a>
 • Discord: <a href="https://discord.com/invite/udQnCRFyus" class="text-accent underline hover:no-underline">Join our Discord server</a>`}
           />
         </div>

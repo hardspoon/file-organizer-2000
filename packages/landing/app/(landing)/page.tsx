@@ -356,10 +356,10 @@ export default function Page() {
                 Educators and students qualify for a special Monthly rate of $9.
                 To claim this offer, please reach out at{' '}
                 <a
-                  href="mailto:notecompanionteam@gmail.com"
+                  href="mailto:info@notecompanion.ai"
                   className="underline hover:no-underline"
                 >
-                  notecompanionteam@gmail.com
+                  info@notecompanion.ai
                 </a>{' '}
                 via your education email.
               </p>

@@ -83,10 +83,10 @@ export default function TermsOfServicePage() {
         <p className="mb-6">
           If you have questions about these terms, please contact us at{' '}
           <a
-            href="mailto:notecompanionteam@gmail.com"
+            href="mailto:info@notecompanion.ai"
             className="text-blue-600 hover:underline"
           >
-            notecompanionteam@gmail.com
+            info@notecompanion.ai
           </a>
           .
         </p>

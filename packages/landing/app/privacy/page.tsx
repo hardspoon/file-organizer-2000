@@ -62,8 +62,8 @@ export default function PrivacyPolicyPage() {
         <h2 className="text-xl font-semibold mt-6 mb-3">Contact Us</h2>
         <p className="mb-6">
           If you have questions about our privacy practices, please contact us at{' '}
-          <a href="mailto:notecompanionteam@gmail.com" className="text-blue-600 hover:underline">
-            notecompanionteam@gmail.com
+          <a href="mailto:info@notecompanion.ai" className="text-blue-600 hover:underline">
+            info@notecompanion.ai
           </a>.
         </p>
 
