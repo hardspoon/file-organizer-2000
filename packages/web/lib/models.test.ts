@@ -1,7 +1,11 @@
 // Mock OpenAI SDK BEFORE importing models
 jest.mock('@ai-sdk/openai', () => {
   const mockProvider = jest.fn(() => ({ modelId: 'gpt-4o-mini' }));
+  const mockOpenAI = jest.fn(() => ({ modelId: 'gpt-4o-mini' })) as any;
+  // Add responses property for getResponsesModel
+  mockOpenAI.responses = jest.fn(() => ({ modelId: 'gpt-4o-mini' }));
   return {
+    openai: mockOpenAI,
     createOpenAI: jest.fn(() => mockProvider),
   };
 });

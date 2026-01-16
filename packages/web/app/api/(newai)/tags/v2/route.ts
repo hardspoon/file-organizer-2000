@@ -65,11 +65,16 @@ export async function POST(request: NextRequest) {
     console.error('Tag generation error:', error);
 
     // Properly handle AuthorizationError with status codes
-    if (error instanceof AuthorizationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.status }
-      );
+    // Use try-catch for instanceof check in case AuthorizationError is undefined (e.g., in tests)
+    try {
+      if (error instanceof AuthorizationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: error.status }
+        );
+      }
+    } catch {
+      // AuthorizationError may be undefined in test environment, fall through to property check
     }
 
     // Handle errors with status property

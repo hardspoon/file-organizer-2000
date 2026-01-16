@@ -17,9 +17,17 @@ jest.mock('@/lib/models', () => ({
   getModel: jest.fn(),
 }));
 
-jest.mock('@/lib/handleAuthorization', () => ({
-  handleAuthorizationV2: jest.fn().mockResolvedValue({ userId: 'test-user-id' }),
-}));
+jest.mock('@/lib/handleAuthorization', () => {
+  // Must call requireActual inside the factory function
+  const actual = jest.requireActual<typeof import('@/lib/handleAuthorization')>('@/lib/handleAuthorization');
+  return {
+    __esModule: true,
+    // Export the real AuthorizationError class so instanceof checks work
+    AuthorizationError: actual.AuthorizationError,
+    handleAuthorizationV2: jest.fn().mockResolvedValue({ userId: 'test-user-id' }),
+    getToken: actual.getToken,
+  };
+});
 
 describe('POST /api/(newai)/classify1', () => {
   beforeEach(() => {
