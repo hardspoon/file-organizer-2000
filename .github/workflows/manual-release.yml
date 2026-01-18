@@ -179,6 +179,14 @@ jobs:
             fi
           done
 
+      - name: Create and push tag
+        run: |
+          VERSION="${{ steps.save_release_data.outputs.version }}"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

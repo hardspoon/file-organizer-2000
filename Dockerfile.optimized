@@ -8,7 +8,10 @@ RUN npm install -g pnpm@10.8.1
 WORKDIR /app
 
 # Copy workspace configuration files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+
+# Copy patches (required by patchedDependencies in package.json)
+COPY patches ./patches
 
 # Copy all package.json files for workspace packages
 COPY packages/web/package.json ./packages/web/
