@@ -39,13 +39,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 
-# Copy workspace configuration (include .npmrc and patches for pnpm install --prod lockfile verification)
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+# Copy workspace configuration (include .npmrc, patches, tsconfig for Next.js/TypeScript)
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc tsconfig.json ./
 COPY patches/ ./patches/
-
-# Copy all source code
-COPY packages/web ./packages/web
 COPY turbo.json ./
+
+# Copy all source code (web extends ../../tsconfig.json)
+COPY packages/web ./packages/web
 
 # Set Node options for build memory
 ENV NODE_OPTIONS="--max-old-space-size=4096"
