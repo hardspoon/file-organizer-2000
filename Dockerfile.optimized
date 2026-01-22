@@ -50,20 +50,13 @@ COPY packages/web ./packages/web
 # Set Node options for build memory
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build the web package
+# Build the web package (standalone output includes minimal node_modules, no prod prune needed)
 WORKDIR /app/packages/web
 RUN pnpm run build:self-host
 
-# Prune devDependencies (--config.confirmModulesPurge=false avoids interactive "Proceed? (Y/n)" in CI)
-WORKDIR /app
-RUN pnpm install --prod --frozen-lockfile --config.confirmModulesPurge=false
-
 # Stage 3: Runner
-# Create the final production image
+# Create the final production image (using Next.js standalone output)
 FROM node:20-alpine AS runner
-
-# Install pnpm
-RUN npm install -g pnpm@10.8.1
 
 # Install wget for health checks
 RUN apk add --no-cache wget
@@ -78,17 +71,15 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next ./packages/web/.next
+# Copy standalone server output (minimal node_modules subset included)
+# With output: "standalone", Next.js creates .next/standalone/ containing:
+#   - server.js (typically at root: /app/server.js after copy)
+#   - node_modules/ (minimal subset, traced dependencies only)
+#   - Other traced files
+# Note: public and .next/static are NOT included in standalone by default
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/packages/web/.next/static ./packages/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/packages/web/public ./packages/web/public
-COPY --from=builder --chown=nextjs:nodejs /app/packages/web/package.json ./packages/web/package.json
-COPY --from=builder --chown=nextjs:nodejs /app/packages/web/next.config.js ./packages/web/next.config.js
-COPY --from=builder --chown=nextjs:nodejs /app/pnpm-workspace.yaml ./
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
-
-# Set working directory to web package
-WORKDIR /app/packages/web
 
 # Switch to non-root user
 USER nextjs
@@ -100,5 +91,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Start the application
-CMD ["pnpm", "run", "start"]
+# Standalone server entrypoint (server.js is at /app/server.js after copying standalone)
+WORKDIR /app
+CMD ["node", "server.js"]
