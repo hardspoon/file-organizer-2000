@@ -89,62 +89,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ---- Build amd64 and push under an arch-specific tag ----
-      - name: Build & push (amd64)
+      # ---- Build & push multi-arch (Buildx creates manifest automatically) ----
+      - name: Build & push (multi-arch)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile.optimized
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.IMAGE }}:${{ env.VERSION }}-amd64
-            ${{ env.IMAGE }}:latest-amd64
-          cache-from: |
-            type=registry,ref=${{ env.IMAGE }}:buildcache-amd64
-            type=gha
-          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-amd64,mode=max
+            ${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
-
-      # ---- Build arm64 and push under an arch-specific tag ----
-      - name: Build & push (arm64)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.optimized
-          platforms: linux/arm64
-          push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ env.VERSION }}-arm64
-            ${{ env.IMAGE }}:latest-arm64
-          cache-from: |
-            type=registry,ref=${{ env.IMAGE }}:buildcache-arm64
-            type=gha
-          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-arm64,mode=max
-          build-args: |
-            NODE_ENV=production
-
-      # ---- Create and push the multi-arch manifests ----
-      - name: Create & push multi-arch manifests
-        run: |
-          set -euo pipefail
-
-          # version manifest
-          docker manifest create ${{ env.IMAGE }}:${{ env.VERSION }} \
-            --amend ${{ env.IMAGE }}:${{ env.VERSION }}-amd64 \
-            --amend ${{ env.IMAGE }}:${{ env.VERSION }}-arm64
-          docker manifest push ${{ env.IMAGE }}:${{ env.VERSION }}
-
-          # latest manifest
-          docker manifest create ${{ env.IMAGE }}:latest \
-            --amend ${{ env.IMAGE }}:latest-amd64 \
-            --amend ${{ env.IMAGE }}:latest-arm64
-          docker manifest push ${{ env.IMAGE }}:latest
-
-          echo "Published:"
-          echo "  - ${{ env.IMAGE }}:${{ env.VERSION }}"
-          echo "  - ${{ env.IMAGE }}:latest"
 
       - name: Generate summary
         run: |
