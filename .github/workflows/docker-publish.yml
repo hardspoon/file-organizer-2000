@@ -69,7 +69,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE: ${{ env.DOCKERHUB_REPO }}
+      IMAGE: nexusjpf/note-companion
       VERSION: ${{ needs.validate-and-extract.outputs.version }}
     steps:
       - name: Checkout code
