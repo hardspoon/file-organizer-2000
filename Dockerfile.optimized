@@ -24,7 +24,10 @@ COPY packages/landing/package.json ./packages/landing/
 COPY packages/release-notes/package.json ./packages/release-notes/
 
 # Install all dependencies (including devDependencies for build)
-RUN pnpm install --frozen-lockfile
+# Use BuildKit cache mount for pnpm store (arch-specific to avoid cross-arch cache pollution)
+RUN --mount=type=cache,id=pnpm-store-${TARGETARCH},target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm install --frozen-lockfile
 
 # Stage 2: Builder
 # Build the application
@@ -51,8 +54,11 @@ COPY packages/web ./packages/web
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build the web package (standalone output includes minimal node_modules, no prod prune needed)
+# Use BuildKit cache mount for pnpm store (arch-specific to avoid cross-arch cache pollution)
 WORKDIR /app/packages/web
-RUN pnpm run build:self-host
+RUN --mount=type=cache,id=pnpm-store-${TARGETARCH},target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm run build:self-host
 
 # Stage 3: Runner
 # Create the final production image (using Next.js standalone output)
