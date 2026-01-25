@@ -187,6 +187,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Trigger Docker build workflow
+        run: |
+          VERSION="${{ steps.save_release_data.outputs.version }}"
+          echo "Triggering Docker Build and Push workflow with version: $VERSION"
+          gh workflow run docker-publish.yml \
+            --ref master \
+            -f tag="$VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
