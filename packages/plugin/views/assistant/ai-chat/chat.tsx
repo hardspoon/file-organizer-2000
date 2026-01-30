@@ -979,8 +979,81 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
 
   // Derive isGenerating from status (replacement for deprecated isLoading)
   const isGenerating = status === "streaming" || status === "submitted";
-  // Show loading indicator only when submitted but not yet streaming (when actual content appears)
-  const showLoadingIndicator = status === "submitted";
+  
+  // Check if there are tool invocations (executing or waiting for AI response)
+  const hasToolActivity = React.useMemo(() => {
+    if (messages.length === 0) return false;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== "assistant") return false;
+    
+    // Extract tool invocations from parts (new format) or fallback to deprecated toolInvocations
+    interface ToolPart {
+      type?: string;
+      toolCallId?: string;
+      toolInvocation?: {
+        toolCallId: string;
+        toolName: string;
+        result?: unknown;
+        state?: string;
+      };
+      output?: unknown;
+      state?: string;
+    }
+    
+    const messageWithParts = lastMessage as Message & {
+      parts?: ToolPart[];
+      toolInvocations?: ToolInvocation[];
+    };
+    
+    // Extract tool invocations from parts (preferred) or fallback to deprecated property
+    let toolInvocations: any[] = [];
+    
+    if (messageWithParts.parts) {
+      toolInvocations = messageWithParts.parts
+        .filter((part: ToolPart) => part.type?.startsWith("tool-") || part.toolInvocation)
+        .map((part: ToolPart) => {
+          if (part.toolInvocation) {
+            return {
+              toolCallId: part.toolInvocation.toolCallId,
+              result: part.toolInvocation.result,
+              state: part.toolInvocation.state || part.state,
+            };
+          }
+          return {
+            toolCallId: part.toolCallId,
+            result: part.output,
+            state: part.state,
+          };
+        })
+        .filter((tool: any) => tool.toolCallId); // Filter out invalid entries
+    }
+    
+    // Fallback to deprecated toolInvocations if parts extraction yielded nothing
+    if (toolInvocations.length === 0 && messageWithParts.toolInvocations) {
+      toolInvocations = messageWithParts.toolInvocations as any[];
+    }
+    
+    if (toolInvocations.length === 0) return false;
+    
+    // Check if any tools are still executing (no result yet)
+    const hasExecutingTools = toolInvocations.some(
+      (tool: any) => !("result" in tool) && tool.state !== "result"
+    );
+    
+    // Check if all tools are complete but AI hasn't started streaming yet
+    const allToolsComplete = toolInvocations.every(
+      (tool: any) => "result" in tool || tool.state === "result"
+    );
+    const waitingForAI = allToolsComplete && (!lastMessage.content || lastMessage.content.length === 0);
+    
+    return hasExecutingTools || waitingForAI;
+  }, [messages]);
+  
+  // Show loading indicator when:
+  // 1. Status is "submitted" (initial request)
+  // 2. Tools are executing (before results appear)
+  // 3. Tools are complete but AI hasn't started streaming yet
+  const showLoadingIndicator = status === "submitted" || (hasToolActivity && status !== "streaming");
 
   // Helper to normalize message with timestamp
   const normalizeMessage = (
@@ -1780,7 +1853,14 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
               // Type guard for parts format (AI SDK v5+)
               interface ToolPart {
                 type: string;
-                toolCallId: string;
+                toolCallId?: string;
+                toolInvocation?: {
+                  toolCallId: string;
+                  toolName: string;
+                  args?: unknown;
+                  result?: unknown;
+                  state?: string;
+                };
                 input?: unknown;
                 output?: unknown;
                 state?: string;
@@ -1789,32 +1869,82 @@ export const ChatComponent: React.FC<ChatComponentProps> = ({
                 parts?: ToolPart[];
                 toolInvocations?: ToolInvocation[];
               };
-              const toolInvocations =
-                messageWithParts.parts
-                  ?.filter((part: ToolPart) => part.type?.startsWith("tool-"))
-                  .map((part: ToolPart) => ({
-                    toolCallId: part.toolCallId,
-                    toolName: part.type.replace("tool-", ""),
-                    args: part.input,
-                    result: part.output,
-                    state:
-                      part.state === "output-available"
-                        ? "result"
-                        : part.state === "input-available"
-                        ? "call"
-                        : "partial-call",
-                  })) ||
-                messageWithParts.toolInvocations ||
-                [];
+              
+              // First, try to use message.toolInvocations directly (most reliable)
+              let toolInvocations: any[] = (messageWithParts.toolInvocations || []) as any[];
+              
+              // If not available, extract from parts
+              if (toolInvocations.length === 0 && messageWithParts.parts) {
+                toolInvocations = messageWithParts.parts
+                  .filter((part: ToolPart) => {
+                    // Match parts that are tool-related
+                    return part.type?.startsWith("tool-") || part.toolInvocation;
+                  })
+                  .map((part: ToolPart) => {
+                    // If part has nested toolInvocation, use that
+                    if (part.toolInvocation) {
+                      console.log("[Chat] Using nested toolInvocation:", part.toolInvocation);
+                      return {
+                        toolCallId: part.toolInvocation.toolCallId,
+                        toolName: part.toolInvocation.toolName,
+                        args: part.toolInvocation.args || part.input,
+                        result: part.toolInvocation.result || part.output,
+                        state: part.toolInvocation.state || part.state || "call",
+                      };
+                    }
+                    
+                    // Otherwise, extract from part.type
+                    const toolName = part.type.replace("tool-", "");
+                    console.log("[Chat] Extracting from part.type:", {
+                      partType: part.type,
+                      extractedToolName: toolName,
+                      toolCallId: part.toolCallId,
+                    });
+                    
+                    // If type is just "tool-invocation", we can't extract the name - skip it
+                    if (toolName === "invocation") {
+                      console.warn("[Chat] Cannot extract tool name from part.type 'tool-invocation', skipping");
+                      return null;
+                    }
+                    
+                    // Require valid toolCallId so addToolResult can match results on the server
+                    if (!part.toolCallId || String(part.toolCallId).trim() === "") {
+                      console.warn("[Chat] Part missing toolCallId, skipping to avoid broken tool result matching");
+                      return null;
+                    }
+                    
+                    return {
+                      toolCallId: part.toolCallId,
+                      toolName: toolName,
+                      args: part.input,
+                      result: part.output,
+                      state:
+                        part.state === "output-available"
+                          ? "result"
+                          : part.state === "input-available"
+                          ? "call"
+                          : "partial-call",
+                    };
+                  })
+                  .filter((inv) => inv !== null);
+              }
+              
+              // Never pass invocations without a valid toolCallId (server matches results by it)
+              toolInvocations = toolInvocations.filter(
+                (inv: { toolCallId?: string }) =>
+                  inv?.toolCallId != null && String(inv.toolCallId).trim() !== ""
+              );
+              
+              console.log("[Chat] Final tool invocations:", toolInvocations);
 
               return (
                 <React.Fragment key={message.id}>
                   {/* Render tool invocations FIRST so they appear above the message content */}
-                  {toolInvocations.map((toolInvocation: ToolInvocation) => {
+                  {toolInvocations.map((toolInvocation: any) => {
                     return (
                       <ToolInvocationHandler
                         key={toolInvocation.toolCallId}
-                        toolInvocation={toolInvocation}
+                        toolInvocation={toolInvocation as ToolInvocation}
                         addToolResult={addToolResult}
                         app={app}
                       />

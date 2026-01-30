@@ -342,19 +342,20 @@ export const chatTools = {
                 .replace(/\\r/g, '\r') // Unescape carriage returns
                 .replace(/\\\\/g, '\\'); // Unescape double backslashes
             }, z.string().describe('The markdown content for the new file')),
+            // REQUIRED (satisfies OpenAI strict tools)
+            // Tell the model to pass "" for root
             folder: z
               .string()
-              .default('')
-              .describe(
-                'Folder path where file should be created (default: root, leave empty for root)'
-              ),
+              .describe('Folder path relative to vault root. Use "" for root folder.'),
           })
         )
         .describe('Array of files to create'),
+      // REQUIRED (satisfies OpenAI strict tools)
+      // Tell the model to pass true as default
       linkInCurrentFile: z
         .boolean()
         .describe(
-          'Whether to add links to these new files in the current active file (default: true)'
+          'Whether to add links to these new files in the current active file. Use true as default.'
         ),
       message: z
         .string()
@@ -463,6 +464,46 @@ export const chatTools = {
         .boolean()
         .describe('Include frontmatter in export (default: false)'),
       message: z.string().describe('Clear explanation of export operation'),
+    }),
+  },
+
+  searchScreenpipe: {
+    description:
+      "ALWAYS use this tool when the user asks about their screen activity, what they were working on, recent activity, or meetings. Search Screenpipe's recorded content: screen text (OCR) and audio transcriptions. When the user asks vaguely (e.g., 'search my screen activity', 'what was I doing in Chrome?'), use ONE BROAD SEARCH with: content_type='all', limit=30-40, app_name='Google Chrome' (if asking about Chrome), window_name='' (EMPTY - to search ALL tabs), start_time='', end_time=''. IMPORTANT: For general activity queries, make ONE broad search that captures everything, NOT multiple narrow searches. Only use window_name when user explicitly asks for a specific website (e.g., 'what was I doing on YouTube?'). For general Chrome activity, ALWAYS use window_name='' to search all tabs. Use time ranges of 1-2 hours max initially. If no results, expand gradually. CRITICAL: When presenting results, GROUP results by the same window/app (same activity). If multiple results have the same window title and app, summarize them together as one activity instead of listing each separately. For example, if there are 5 results from the same YouTube video, present it as one entry with a note like '5 snapshots from this activity'. CRITICAL APP NAME MAPPING: When user asks about YouTube, Gmail, or any website, the app_name is ALWAYS 'Google Chrome' (not 'YouTube', not 'Gmail', not the website name). For specific websites: use app_name='Google Chrome' and window_name='YouTube' (or 'Gmail', etc.). For general Chrome activity: use app_name='Google Chrome' and window_name='' (EMPTY). The app_name parameter must be the actual macOS application name: 'Google Chrome', 'Slack', 'zoom.us', 'Code', 'Terminal', 'Obsidian', etc. NEVER use website names as app_name.",
+    parameters: z.object({
+      // REQUIRED (satisfies OpenAI strict tools) - use "" for vague queries
+      q: z
+        .string()
+        .describe('Search keywords. For vague queries like "search my screen activity", use "". Only use keywords when user specifies them.'),
+      // REQUIRED (satisfies OpenAI strict tools) - use "all" as default
+      content_type: z
+        .enum(['all', 'ocr', 'audio'])
+        .describe(
+          "Filter by type. Use 'audio' for meetings/conversations, 'ocr' for screen text. Use 'all' for general searches or when user doesn't specify."
+        ),
+      // REQUIRED (satisfies OpenAI strict tools) - use 10 as default, can go up to 50
+      limit: z
+        .number()
+        .min(1)
+        .max(50)
+        .describe('Max results (1-50). Default to 10 for most queries. Use 20-50 if user asks for "all results", "more results", or wants comprehensive activity history. For recent activity, 10 is usually sufficient.'),
+      // REQUIRED (satisfies OpenAI strict tools) - use "" for recent/recent activity
+      start_time: z
+        .string()
+        .describe('ISO 8601 UTC start time. Example: 2024-01-15T10:00:00Z. Use "" for recent activity (last 30-60 min) or when not specified. NOTE: Results include both UTC timestamps and local time versions (timestampsLocal field). Always use the local time versions when displaying timestamps to users.'),
+      // REQUIRED (satisfies OpenAI strict tools) - use "" for recent/recent activity
+      end_time: z
+        .string()
+        .describe('ISO 8601 UTC end time. Use "" for recent activity (now) or when not specified. NOTE: Results include local time versions in timestampsLocal field - use those for display.'),
+      // REQUIRED (satisfies OpenAI strict tools) - use "" for vague queries
+      app_name: z
+        .string()
+        .describe(
+          "Filter by app name. Examples: 'Google Chrome' (for YouTube, web browsing), 'Slack', 'zoom.us', 'Code', 'Terminal'. IMPORTANT: YouTube runs inside Chrome, so use 'Google Chrome' for YouTube activity, not 'YouTube'. Use \"\" when user doesn't specify an app or asks about general activity."
+        ),
+      window_name: z
+        .string()
+        .describe('Filter by window title substring. For websites, use the website name here (e.g., "YouTube", "Gmail"). CRITICAL: Use "" (EMPTY STRING) when user asks about general Chrome activity or doesn\'t specify a specific website. Only use a specific window_name when the user explicitly asks about a specific website (e.g., "what was I doing on YouTube?"). For "what was I doing in Chrome?" or general activity queries, ALWAYS use window_name="".'),
     }),
   },
 } as const;
