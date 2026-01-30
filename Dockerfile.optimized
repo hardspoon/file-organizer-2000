@@ -93,9 +93,9 @@ USER nextjs
 # Expose port
 EXPOSE 3000
 
-# Health check
+# Health check (use 127.0.0.1 to avoid IPv6 localhost resolution causing "Connection refused" in some environments)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
 
 # Standalone server entrypoint
 # In Next.js 15+ with pnpm workspaces, server.js is at packages/web/server.js
