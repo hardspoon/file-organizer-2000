@@ -14,6 +14,7 @@ import {
   Calendar,
   FileSymlink,
   RefreshCw,
+  Key,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,7 @@ export default function DashboardPage() {
     subscriptionStatus: '',
     currentPlan: '',
     nextReset: '',
+    isActive: false,
   });
   const [recentFiles, setRecentFiles] = React.useState<
     Array<{
@@ -278,7 +280,15 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {apiUsage.isActive && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/subscribers">
+                      <Key className="mr-2 h-4 w-4" />
+                      Get license key
+                    </Link>
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/dashboard/pricing">
                     <CreditCard className="mr-2 h-4 w-4" />

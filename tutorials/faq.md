@@ -1,3 +1,6 @@
+**Q: Where do I find billing and my license key?**
+A: **Billing** (manage subscription, payment method, invoices): Click **Settings** in the top nav → open the **Billing & Subscription** card → click **Manage Subscription**. That opens the Stripe customer portal. **License key** (for the Obsidian plugin): Click **API Keys** in the top nav, or **Settings** → **License key** → **API Keys & license**. On the Dashboard, if you have an active plan, use the **Get license key** button. On the API Keys page you can create or copy your license key.
+
 **Q: What is meant by "Unlimited usage" included in the Lifetime Plan?**
 A: If you purchase lifetime license. You'll use your own openAI API key, linked directly to your account and credits.
 
