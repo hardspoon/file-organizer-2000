@@ -101,6 +101,22 @@ describe('getUserSubscriptionStatus', () => {
       expect(result.active).toBe(true);
     });
 
+    it('should return active when subscriptionStatus is paid (invoice-paid webhook)', async () => {
+      mockDbExecute.mockResolvedValueOnce([
+        {
+          userId: 'test-user',
+          subscriptionStatus: 'paid',
+          paymentStatus: 'paid',
+          currentProduct: 'pro',
+          billingCycle: 'monthly',
+        },
+      ]);
+
+      const result = await getUserSubscriptionStatus('test-user');
+
+      expect(result.active).toBe(true);
+    });
+
     it('should return inactive when paymentStatus is not paid or succeeded', async () => {
       mockDbExecute.mockResolvedValueOnce([
         {

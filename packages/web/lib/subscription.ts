@@ -50,9 +50,18 @@ export async function getUserSubscriptionStatus(userId: string): Promise<Subscri
 
     // Determine if the subscription is active
     // Lifetime licenses are always active
-    const active = billingCycle === "lifetime" ||
-                  (subscriptionStatus === "active" &&
-                   (paymentStatus === "paid" || paymentStatus === "succeeded"));
+    // Invoice-paid webhook sets subscriptionStatus to Stripe invoice.status ("paid"), not "active"
+    const subscriptionOk =
+      subscriptionStatus === "active" ||
+      subscriptionStatus === "paid" ||
+      subscriptionStatus === "succeeded" ||
+      subscriptionStatus === "trialing";
+    const paymentOk =
+      paymentStatus === "paid" ||
+      paymentStatus === "succeeded" ||
+      paymentStatus === "free";
+    const active =
+      billingCycle === "lifetime" || (subscriptionOk && paymentOk);
 
     return {
       subscriptionStatus,
